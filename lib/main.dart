@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:wear/wear.dart';
-import './screens/TimePicker.dart'; // Import the TimePickerScreen file
-import 'package:flutter/services.dart';
+import './screens/Home.dart';
 
 void main() {
-  runApp(const WearTimePickerApp());
+  runApp(const UacCompanion());
 }
 
-class WearTimePickerApp extends StatelessWidget {
-  const WearTimePickerApp({super.key});
+class UacCompanion extends StatelessWidget {
+  const UacCompanion({super.key});
 
   @override
   Widget build(BuildContext context) {
     return WatchShape(
       builder: (context, shape, child) {
+        final bool isRound = shape == WearShape.round;
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData.dark(),
-          home: TimePickerScreen(watchShape: shape), // Pass the shape here
+          home: Home(isRound: isRound),
         );
       },
     );

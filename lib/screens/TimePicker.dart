@@ -1,23 +1,24 @@
-//! Still need to fix a lot of UI
 import 'package:flutter/material.dart';
-import 'package:wear/wear.dart';
-import 'SmartControl.dart';
-import 'dart:async';
-import '../controllers/wear_bridge.dart';
+import 'package:uac_companion/screens/SmartControl.dart';
+import '../utils/Colors.dart';
+import 'MoreOptionsScreen.dart';
 
 class TimePickerScreen extends StatefulWidget {
-  final WearShape watchShape;
+  final bool isRound;
 
-  const TimePickerScreen({super.key, required this.watchShape});
+  const TimePickerScreen({super.key, required this.isRound});
 
   @override
   State<TimePickerScreen> createState() => _TimePickerScreenState();
 }
 
+int selectedIconIndex = 1; // Default select check icon
+
 class _TimePickerScreenState extends State<TimePickerScreen> {
   late int selectedHour;
   late int selectedMinute;
   late String selectedPeriod;
+
   late FixedExtentScrollController hourController;
   late FixedExtentScrollController minuteController;
   late FixedExtentScrollController periodController;
@@ -25,7 +26,6 @@ class _TimePickerScreenState extends State<TimePickerScreen> {
   @override
   void initState() {
     super.initState();
-
     final now = DateTime.now();
     selectedHour =
         now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
@@ -36,169 +36,157 @@ class _TimePickerScreenState extends State<TimePickerScreen> {
     minuteController = FixedExtentScrollController(initialItem: selectedMinute);
     periodController = FixedExtentScrollController(
         initialItem: selectedPeriod == 'AM' ? 0 : 1);
-
-    // Receiver code from UAC Mobile
-    WearBridge.messages.listen((event) {
-      debugPrint("Received from native: $event");
-
-      if (event['type'] == 'message') {
-        final path = event['path'];
-        final data = event['data'];
-        debugPrint("Message Path: $path | Data: $data");
-      }
-
-      if (event['type'] == 'data') {
-        final interval = event['interval'];
-        debugPrint("Data Item Received: $interval");
-      }
-
-      if (event['type'] == 'capability') {
-        final name = event['name'];
-        debugPrint("Capability update: $name");
-      }
-    });
   }
 
-  void _confirmSelection() async {
-    final formattedTime =
+  void _confirmTime() {
+    final formatted =
         '${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')} $selectedPeriod';
-    debugPrint('Selected Time: $formattedTime');
-
-    // Send time to phone 
-    try {
-      await WearBridge.sendMessage(
-        nodeId: 'dummy-node-id', //! Replace this 
-        path: '/alarm/set_time',
-        message: formattedTime,
-      );
-      debugPrint('Message sent to phone!');
-    } catch (e) {
-      debugPrint('Failed to send message: $e');
-    }
+    debugPrint('Selected Time: $formatted');
   }
 
   @override
   Widget build(BuildContext context) {
+    final isRound = widget.isRound;
+
     return Scaffold(
-      backgroundColor: const Color(0xff16171c),
+      backgroundColor: AppColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 10),
             Container(
+              padding: EdgeInsets.symmetric(
+                  vertical: isRound ? 8 : 10, horizontal: isRound ? 15 : 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF444444),
+                color: AppColors.grayBlack,
                 borderRadius: BorderRadius.circular(70),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildInfiniteScroll(
-                      1,
-                      12,
-                      (val) => setState(() => selectedHour = val),
-                      selectedHour,
-                      hourController),
-                  const Text(':',
-                      style: TextStyle(fontSize: 28, color: Color(0xffAFFC41))),
-                  _buildInfiniteScroll(
-                      0,
-                      59,
-                      (val) => setState(() => selectedMinute = val),
-                      selectedMinute,
-                      minuteController),
+                  _buildInfiniteScroll(1, 12, selectedHour, hourController,
+                      (val) {
+                    setState(() => selectedHour = val);
+                  }),
+                  Text(
+                    ':',
+                    style: TextStyle(
+                        fontSize: isRound ? 20 : 28,
+                        color: AppColors.notSeleted),
+                  ),
+                  _buildInfiniteScroll(0, 59, selectedMinute, minuteController,
+                      (val) {
+                    setState(() => selectedMinute = val);
+                  }),
                   _buildFixedScroll(
-                      ['AM', 'PM'],
-                      (val) => setState(() => selectedPeriod = val),
-                      selectedPeriod,
-                      periodController),
+                      ['AM', 'PM'], selectedPeriod, periodController, (val) {
+                    setState(() => selectedPeriod = val);
+                  }),
                 ],
               ),
             ),
-            const SizedBox(height: 15),
+            SizedBox(height: isRound ? 5 : 15),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildIconButton(Icons.more_vert, () {}),
-                _buildIconButton(Icons.check, _confirmSelection,
-                    isSelected: true),
-                _buildIconButton(Icons.notifications_active, () {
+                _buildIconButton(0, Icons.more_vert, () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const SmartControlsScreen()),
+                        builder: (_) => const MoreOptionsScreen()),
+                  );
+                }),
+                _buildIconButton(1, Icons.check, _confirmTime),
+                _buildIconButton(2, Icons.notifications_active, () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const SmartControlsScreen()),
                   );
                 }),
               ],
-            ),
+            )
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfiniteScroll(int min, int max, Function(int) onChanged,
-      int selectedValue, FixedExtentScrollController controller) {
+  Widget _buildInfiniteScroll(int min, int max, int selectedValue,
+      FixedExtentScrollController controller, Function(int) onChanged) {
+    final isRound = widget.isRound;
     return SizedBox(
-      width: 50,
-      height: 90,
+      width: isRound ? 40 : 55,
+      height: isRound ? 90 : 100,
       child: ListWheelScrollView.useDelegate(
         controller: controller,
-        onSelectedItemChanged: (index) {
-          int newValue = min + index;
-          onChanged(newValue);
-        },
         itemExtent: 36,
         perspective: 0.005,
+        physics: const FixedExtentScrollPhysics(),
+        onSelectedItemChanged: (index) {
+          onChanged(min + index);
+        },
         childDelegate: ListWheelChildLoopingListDelegate(
           children: List.generate(
             max - min + 1,
-            (index) => Text(
-              '${min + index}'.padLeft(2, '0'),
-              style: TextStyle(
-                fontSize: selectedValue == (min + index) ? 28 : 20,
-                color: selectedValue == (min + index)
-                    ? const Color(0xffAFFC41)
-                    : const Color(0xB3FFFFFF),
-                fontWeight: selectedValue == (min + index)
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
+            (index) {
+              final value = min + index;
+              final isSelected = selectedValue == value;
+              return Center(
+                child: Text(
+                  value.toString().padLeft(2, '0'),
+                  style: TextStyle(
+                    fontSize: isSelected
+                        ? (isRound ? 25 : 30)
+                        : isRound
+                            ? 20
+                            : 20,
+                    color: isSelected ? AppColors.green : AppColors.notSeleted,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFixedScroll(List<String> labels, Function(String) onChanged,
-      String selectedValue, FixedExtentScrollController controller) {
+  Widget _buildFixedScroll(List<String> items, String selectedValue,
+      FixedExtentScrollController controller, Function(String) onChanged) {
+    final isRound = widget.isRound;
     return SizedBox(
-      width: 36,
-      height: 100,
+      width: isRound ? 40 : 55,
+      height: isRound ? 90 : 100,
       child: ListWheelScrollView.useDelegate(
         controller: controller,
-        onSelectedItemChanged: (index) {
-          debugPrint('Selected Period: ${labels[index]}');
-          onChanged(labels[index]);
-        },
         itemExtent: 36,
         perspective: 0.005,
         physics: const FixedExtentScrollPhysics(),
+        onSelectedItemChanged: (index) {
+          onChanged(items[index]);
+        },
         childDelegate: ListWheelChildListDelegate(
-          children: labels.map((label) {
-            bool isSelected = selectedValue == label;
-            return Text(
-              label,
-              style: TextStyle(
-                fontSize: isSelected ? 28 : 20,
-                color: isSelected
-                    ? const Color(0xffAFFC41)
-                    : const Color(0xB3FFFFFF),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          children: items.map((item) {
+            final isSelected = selectedValue == item;
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: isRound ? 0 : 4),
+                child: Text(
+                  item,
+                  style: TextStyle(
+                    fontSize: isSelected
+                        ? (isRound ? 23 : 25)
+                        : isRound
+                            ? 20
+                            : 20,
+                    color: isSelected ? AppColors.green : AppColors.notSeleted,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
               ),
             );
           }).toList(),
@@ -207,22 +195,37 @@ class _TimePickerScreenState extends State<TimePickerScreen> {
     );
   }
 
-  Widget _buildIconButton(IconData icon, VoidCallback onTap,
-      {bool isSelected = false}) {
+  Widget _buildIconButton(int index, IconData icon, VoidCallback onTap) {
+    final isSelected = selectedIconIndex == index;
+    final isRound = widget.isRound;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          setState(() {
+            selectedIconIndex = index;
+          });
+          onTap();
+        },
         child: Container(
+          padding: EdgeInsets.all(isRound ? 5 : 8),
           decoration: BoxDecoration(
-            color:
-                isSelected ? const Color(0xffAFFC41) : const Color(0xFF444444),
+            color: isSelected ? AppColors.green : AppColors.grayBlack,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(2, 2),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon,
-              color: isSelected ? Colors.black : const Color(0xB3FFFFFF),
-              size: 24),
+          child: Icon(
+            icon,
+            size: 24,
+            color: isSelected ? AppColors.background : const Color(0xB3FFFFFF),
+          ),
         ),
       ),
     );

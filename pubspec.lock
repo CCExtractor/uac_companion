@@ -209,7 +209,7 @@ packages:
     source: hosted
     version: "14.2.1"
   wear:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: wear
       sha256: b8aa77aff3351d301561a665d94416ed929dfa69ab898c5255d19f4a478eb27a
