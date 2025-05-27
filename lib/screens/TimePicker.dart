@@ -2,11 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:uac_companion/screens/SmartControl.dart';
 import '../utils/Colors.dart';
 import 'MoreOptionsScreen.dart';
+import 'package:flutter/services.dart';
 
 class TimePickerScreen extends StatefulWidget {
   final bool isRound;
+  final int? initialHour;
+  final int? initialMinute;
+  final int? alarmId;
 
-  const TimePickerScreen({super.key, required this.isRound});
+  const TimePickerScreen({
+    super.key,
+    required this.isRound,
+    this.initialHour,
+    this.initialMinute,
+    this.alarmId,
+  });
 
   @override
   State<TimePickerScreen> createState() => _TimePickerScreenState();
@@ -15,6 +25,20 @@ class TimePickerScreen extends StatefulWidget {
 int selectedIconIndex = 1; // Default select check icon
 
 class _TimePickerScreenState extends State<TimePickerScreen> {
+
+static const platform = MethodChannel('alarm_channel');
+
+  Future<void> scheduleAlarm(int hour, int minute) async {
+    try {
+      await platform.invokeMethod('scheduleAlarm', {
+        'hour': hour,
+        'minute': minute,
+      });
+    } on PlatformException catch (e) {
+      print("Failed to schedule alarm: '${e.message}'.");
+    }
+  }
+
   late int selectedHour;
   late int selectedMinute;
   late String selectedPeriod;
@@ -26,23 +50,43 @@ class _TimePickerScreenState extends State<TimePickerScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    selectedHour =
-        now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    selectedMinute = now.minute;
-    selectedPeriod = now.hour >= 12 ? 'PM' : 'AM';
+
+    final hour24 = widget.initialHour ?? DateTime.now().hour;
+    final minute = widget.initialMinute ?? DateTime.now().minute;
+
+    selectedHour = hour24 == 0
+        ? 12
+        : hour24 > 12
+            ? hour24 - 12
+            : hour24;
+
+    selectedMinute = minute;
+    selectedPeriod = hour24 >= 12 ? 'PM' : 'AM';
 
     hourController = FixedExtentScrollController(initialItem: selectedHour - 1);
     minuteController = FixedExtentScrollController(initialItem: selectedMinute);
     periodController = FixedExtentScrollController(
         initialItem: selectedPeriod == 'AM' ? 0 : 1);
   }
+  
 
-  void _confirmTime() {
-    final formatted =
-        '${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')} $selectedPeriod';
-    debugPrint('Selected Time: $formatted');
+void _confirmTime() async {
+  int finalHour;
+  if (selectedPeriod == 'AM') {
+    finalHour = selectedHour == 12 ? 0 : selectedHour;
+  } else {
+    finalHour = selectedHour == 12 ? 12 : selectedHour + 12;
   }
+
+  await scheduleAlarm(finalHour, selectedMinute); // await here
+
+  Navigator.pop(context, {
+    'hour': finalHour,
+    'minute': selectedMinute,
+    'alarmId': widget.alarmId,
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
