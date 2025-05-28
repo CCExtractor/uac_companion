@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:uac_companion/screens/SmartControl.dart';
-import '../utils/Colors.dart';
-import 'MoreOptionsScreen.dart';
+import 'package:uac_companion/app/views/smart_control.dart';
+import '../utils/colors.dart';
+import 'more_option_screen.dart';
 import 'package:flutter/services.dart';
 
 class TimePickerScreen extends StatefulWidget {
@@ -22,7 +22,7 @@ class TimePickerScreen extends StatefulWidget {
   State<TimePickerScreen> createState() => _TimePickerScreenState();
 }
 
-int selectedIconIndex = 1; // Default select check icon
+int selectedIconIndex = 1;
 
 class _TimePickerScreenState extends State<TimePickerScreen> {
 
@@ -78,7 +78,7 @@ void _confirmTime() async {
     finalHour = selectedHour == 12 ? 12 : selectedHour + 12;
   }
 
-  await scheduleAlarm(finalHour, selectedMinute); // await here
+  await scheduleAlarm(finalHour, selectedMinute);
 
   Navigator.pop(context, {
     'hour': finalHour,

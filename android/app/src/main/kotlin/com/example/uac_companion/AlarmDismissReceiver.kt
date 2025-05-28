@@ -15,4 +15,3 @@ class AlarmDismissReceiver : BroadcastReceiver() {
         notificationManager.cancel(NOTIFICATION_ID)
     }
 }
-

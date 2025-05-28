@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:uac_companion/utils/Colors.dart';
+import 'package:uac_companion/app/utils/colors.dart';
 
 class MoreOptionsScreen extends StatelessWidget {
   const MoreOptionsScreen({super.key});

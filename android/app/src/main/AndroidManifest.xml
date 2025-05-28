@@ -14,6 +14,7 @@
 
         <receiver android:name=".AlarmBroadcastReceiver" android:exported="true" />
         <receiver android:name=".AlarmDismissReceiver" android:exported="true"/>
+        <receiver android:name=".AlarmSnoozeReceiver" android:exported="true"/>
 
         <uses-library
             android:name="com.google.android.wearable"

@@ -81,6 +81,8 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    //! Scheduling of alarms 
+    //! Provide this function the Time sent through UAC in the format of hour and minute
     private fun scheduleAlarm(hour: Int, minute: Int) {
         Log.d("Alarm", "Scheduling alarm at $hour:$minute")
 

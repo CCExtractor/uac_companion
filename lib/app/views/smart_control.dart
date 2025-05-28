@@ -1,6 +1,6 @@
 //! NO functionality added till now
 import 'package:flutter/material.dart';
-import 'ScreenActivity.dart';
+import 'screen_activity.dart';
 
 class SmartControlsScreen extends StatefulWidget {
   const SmartControlsScreen({super.key});

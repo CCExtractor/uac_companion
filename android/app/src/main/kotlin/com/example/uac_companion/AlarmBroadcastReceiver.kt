@@ -62,22 +62,21 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
                         dismissIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-
-        val notification =
-                NotificationCompat.Builder(context, CHANNEL_ID)
-                        .setContentTitle("Alarm Alert")
-                        .setContentText("Dismiss")
-                        .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .setCategory(NotificationCompat.CATEGORY_ALARM)
-                        .setOngoing(true)
-                        .addAction(
-                                android.R.drawable.ic_media_pause,
-                                "Dismiss",
-                                dismissPendingIntent
-                        )
-                        .setFullScreenIntent(dismissPendingIntent, true)
-                        .build()
+                val snoozeIntent = Intent(context, AlarmSnoozeReceiver::class.java)
+                val snoozePendingIntent = PendingIntent.getBroadcast(
+                    context, 1, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle("Alarm Alert")
+                .setContentText("Alarm is ringing")
+                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setOngoing(true)
+                .addAction(android.R.drawable.ic_media_pause, "Dismiss", dismissPendingIntent)
+                .addAction(android.R.drawable.ic_media_play, "Snooze", snoozePendingIntent)
+                .setFullScreenIntent(dismissPendingIntent, true)
+                .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
     }

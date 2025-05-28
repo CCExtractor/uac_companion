@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'TimePicker.dart';
-import '../utils/Colors.dart';
-import '../database/alarm_databse.dart';
+import 'time_picker.dart';
+import '../utils/colors.dart';
+import '../data/alarm_data.dart';
 
 class Home extends StatefulWidget {
   final bool isRound;

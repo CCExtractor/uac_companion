@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wear/wear.dart';
-import './screens/Home.dart';
+import 'app/views/home.dart';
 
 void main() {
   runApp(const UacCompanion());
