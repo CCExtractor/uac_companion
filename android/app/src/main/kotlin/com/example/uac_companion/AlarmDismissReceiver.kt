@@ -6,7 +6,7 @@ import android.util.Log
 
 class AlarmDismissReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AlarmDismissReceiver", "Alarm dismissed.")
+        Log.d("AlarmDismissReceiver", "Ringtone playing: ${AlarmServiceHolder.ringtone?.isPlaying}")
 
         AlarmServiceHolder.ringtone?.stop()
         AlarmServiceHolder.vibrator?.cancel()

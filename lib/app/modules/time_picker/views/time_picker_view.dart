@@ -1,47 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:uac_companion/app/views/smart_control.dart';
-import '../utils/colors.dart';
-import 'more_option_screen.dart';
-import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import '../../../utils/colors.dart';
+import '../controllers/time_picker_controller.dart';
+import '../../../views/more_option_screen.dart';
+import '../../../views/smart_control.dart';
+import '../../../../watch_shape.dart';
 
-class TimePickerScreen extends StatefulWidget {
-  final bool isRound;
+class TimePickerView extends StatefulWidget {
   final int? initialHour;
   final int? initialMinute;
   final int? alarmId;
 
-  const TimePickerScreen({
+  const TimePickerView({
     super.key,
-    required this.isRound,
     this.initialHour,
     this.initialMinute,
     this.alarmId,
   });
 
   @override
-  State<TimePickerScreen> createState() => _TimePickerScreenState();
+  State<TimePickerView> createState() => _TimePickerViewState();
 }
 
-int selectedIconIndex = 1;
-
-class _TimePickerScreenState extends State<TimePickerScreen> {
-
-static const platform = MethodChannel('alarm_channel');
-
-  Future<void> scheduleAlarm(int hour, int minute) async {
-    try {
-      await platform.invokeMethod('scheduleAlarm', {
-        'hour': hour,
-        'minute': minute,
-      });
-    } on PlatformException catch (e) {
-      debugPrint("Failed to schedule alarm: '${e.message}'.");
-    }
-  }
-
-  late int selectedHour;
-  late int selectedMinute;
-  late String selectedPeriod;
+class _TimePickerViewState extends State<TimePickerView> {
+  late final TimePickerController controller;
 
   late FixedExtentScrollController hourController;
   late FixedExtentScrollController minuteController;
@@ -51,106 +33,106 @@ static const platform = MethodChannel('alarm_channel');
   void initState() {
     super.initState();
 
+    controller = Get.put(TimePickerController(
+      // isRound: Get.find<DeviceController>().isRound.value,
+      initialHour: widget.initialHour,
+      initialMinute: widget.initialMinute,
+      alarmId: widget.alarmId,
+    ));
+
     final hour24 = widget.initialHour ?? DateTime.now().hour;
     final minute = widget.initialMinute ?? DateTime.now().minute;
 
-    selectedHour = hour24 == 0
+    final selectedHour = hour24 == 0
         ? 12
         : hour24 > 12
             ? hour24 - 12
             : hour24;
 
-    selectedMinute = minute;
-    selectedPeriod = hour24 >= 12 ? 'PM' : 'AM';
+    final selectedMinute = minute;
+    final selectedPeriod = hour24 >= 12 ? 'PM' : 'AM';
+
+    controller.setHour(selectedHour);
+    controller.setMinute(selectedMinute);
+    controller.setPeriod(selectedPeriod);
 
     hourController = FixedExtentScrollController(initialItem: selectedHour - 1);
     minuteController = FixedExtentScrollController(initialItem: selectedMinute);
     periodController = FixedExtentScrollController(
         initialItem: selectedPeriod == 'AM' ? 0 : 1);
   }
-  
-
-void _confirmTime() async {
-  int finalHour;
-  if (selectedPeriod == 'AM') {
-    finalHour = selectedHour == 12 ? 0 : selectedHour;
-  } else {
-    finalHour = selectedHour == 12 ? 12 : selectedHour + 12;
-  }
-
-  await scheduleAlarm(finalHour, selectedMinute);
-
-  Navigator.pop(context, {
-    'hour': finalHour,
-    'minute': selectedMinute,
-    'alarmId': widget.alarmId,
-  });
-}
-
 
   @override
   Widget build(BuildContext context) {
-    final isRound = widget.isRound;
+    final isRound = Get.find<DeviceController>().isRound.value;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(
-                  vertical: isRound ? 8 : 10, horizontal: isRound ? 15 : 10),
-              decoration: BoxDecoration(
-                color: AppColors.grayBlack,
-                borderRadius: BorderRadius.circular(70),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildInfiniteScroll(1, 12, selectedHour, hourController,
-                      (val) {
-                    setState(() => selectedHour = val);
-                  }),
-                  Text(
-                    ':',
-                    style: TextStyle(
-                        fontSize: isRound ? 20 : 28,
-                        color: AppColors.notSeleted),
-                  ),
-                  _buildInfiniteScroll(0, 59, selectedMinute, minuteController,
-                      (val) {
-                    setState(() => selectedMinute = val);
-                  }),
-                  _buildFixedScroll(
-                      ['AM', 'PM'], selectedPeriod, periodController, (val) {
-                    setState(() => selectedPeriod = val);
-                  }),
-                ],
-              ),
-            ),
-            SizedBox(height: isRound ? 5 : 15),
-            Row(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildIconButton(0, Icons.more_vert, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const MoreOptionsScreen()),
-                  );
-                }),
-                _buildIconButton(1, Icons.check, _confirmTime),
-                _buildIconButton(2, Icons.notifications_active, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const SmartControlsScreen()),
-                  );
-                }),
+                Obx(() => Container(
+                      padding: EdgeInsets.symmetric(
+                          vertical: isRound ? 8 : 10,
+                          horizontal: isRound ? 15 : 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.grayBlack,
+                        borderRadius: BorderRadius.circular(70),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildInfiniteScroll(
+                              1,
+                              12,
+                              controller.selectedHour.value,
+                              hourController,
+                              controller.setHour),
+                          Text(
+                            ':',
+                            style: TextStyle(
+                                fontSize: isRound ? 20 : 28,
+                                color: AppColors.notSeleted),
+                          ),
+                          _buildInfiniteScroll(
+                              0,
+                              59,
+                              controller.selectedMinute.value,
+                              minuteController,
+                              controller.setMinute),
+                          _buildFixedScroll(
+                              ['AM', 'PM'],
+                              controller.selectedPeriod.value,
+                              periodController,
+                              controller.setPeriod),
+                        ],
+                      ),
+                    )),
+                SizedBox(height: isRound ? 5 : 15),
+                Obx(() => Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildIconButton(0, Icons.more_vert, () {
+                          controller.setSelectedIcon(0);
+                          Get.to(() => const MoreOptionsScreen());
+                        }, controller.selectedIconIndex.value == 0),
+                        _buildIconButton(1, Icons.check, () {
+                          controller.setSelectedIcon(1);
+                          // controller.confirmTime(widget.alarmId);
+                          controller.confirmTime();
+                        }, controller.selectedIconIndex.value == 1),
+                        _buildIconButton(2, Icons.notifications_active, () {
+                          controller.setSelectedIcon(2);
+                          Get.to(() => const SmartControlsScreen());
+                        }, controller.selectedIconIndex.value == 2),
+                      ],
+                    ))
               ],
-            )
-          ],
+            ),
+          ),
         ),
       ),
     );
@@ -158,7 +140,7 @@ void _confirmTime() async {
 
   Widget _buildInfiniteScroll(int min, int max, int selectedValue,
       FixedExtentScrollController controller, Function(int) onChanged) {
-    final isRound = widget.isRound;
+    final isRound = Get.find<DeviceController>().isRound.value;
     return SizedBox(
       width: isRound ? 40 : 55,
       height: isRound ? 90 : 100,
@@ -200,7 +182,8 @@ void _confirmTime() async {
 
   Widget _buildFixedScroll(List<String> items, String selectedValue,
       FixedExtentScrollController controller, Function(String) onChanged) {
-    final isRound = widget.isRound;
+    final isRound = Get.find<DeviceController>().isRound.value;
+
     return SizedBox(
       width: isRound ? 40 : 55,
       height: isRound ? 90 : 100,
@@ -239,16 +222,15 @@ void _confirmTime() async {
     );
   }
 
-  Widget _buildIconButton(int index, IconData icon, VoidCallback onTap) {
-    final isSelected = selectedIconIndex == index;
-    final isRound = widget.isRound;
+  Widget _buildIconButton(
+      int index, IconData icon, VoidCallback onTap, bool isSelected) {
+    final isRound = Get.find<DeviceController>().isRound.value;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            selectedIconIndex = index;
-          });
+          controller.setSelectedIcon(index);
           onTap();
         },
         child: Container(

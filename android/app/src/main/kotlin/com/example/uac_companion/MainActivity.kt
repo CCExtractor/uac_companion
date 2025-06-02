@@ -2,15 +2,15 @@ package com.example.uac_companion
 
 import android.app.*
 import android.content.*
+import android.content.pm.PackageManager
 import android.os.*
+import android.provider.Settings
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import android.content.pm.PackageManager
-import android.provider.Settings
 import java.util.*
 
 class MainActivity : FlutterActivity() {
@@ -23,32 +23,55 @@ class MainActivity : FlutterActivity() {
 
         checkAndRequestPermissions()
 
-        //! MethodChannel to Schedule Alarms
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            if (call.method == "scheduleAlarm") {
-                val hour = call.argument<Int>("hour")
-                val minute = call.argument<Int>("minute")
-                if (hour != null && minute != null) {
-                    scheduleAlarm(hour, minute)
-                    result.success(null)
-                } else {
-                    result.error("INVALID_ARGS", "Hour or minute missing", null)
+        // ! MethodChannel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
+                call,
+                result ->
+            when (call.method) {
+                //! handles calls for both updated alarm (id != null) and new alarms (id=null)
+                "scheduleAlarm" -> {
+                    val hour = call.argument<Int>("hour")
+                    val minute = call.argument<Int>("minute")
+                    val id = call.argument<Int>("alarmId")
+
+                    Log.d(
+                            "FlutterToNative",
+                            "kotline scheduleAlarm=$id, hour=$hour, minute=$minute"
+                    )
+                    if (id != null && hour != null && minute != null) {
+                        scheduleAlarm(id, hour, minute)
+                        result.success(null)
+                    } else{
+                        result.error("INVALID_ARGS", "ID, hour or minute missing", null)
+                    }
                 }
-            } else {
-                result.notImplemented()
+                //! handles calls from toggle button in the alarm screen
+                "cancelAlarm" -> {
+                    val id = call.argument<Int>("id")
+                    if (id != null) {
+                        cancelAlarm(id)
+                        result.success(null)
+                    } else {
+                        result.error("INVALID_ID", "Alarm ID missing", null)
+                    }
+                }
+                else -> result.notImplemented()
             }
         }
     }
 
+    // ! Permission handling
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(
+                            this,
+                            android.Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    NOTIFICATION_PERMISSION_REQUEST_CODE
+                        this,
+                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                        NOTIFICATION_PERMISSION_REQUEST_CODE
                 )
                 return
             }
@@ -56,8 +79,11 @@ class MainActivity : FlutterActivity() {
 
         requestExactAlarmPermissionIfNeeded()
     }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -68,48 +94,112 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
-
     private fun requestExactAlarmPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
+                val intent =
+                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
                 startActivity(intent)
             }
         }
     }
 
-    //! Scheduling of alarms 
-    //! Provide this function the Time sent through UAC in the format of hour and minute
-    private fun scheduleAlarm(hour: Int, minute: Int) {
-        Log.d("Alarm", "Scheduling alarm at $hour:$minute")
+    // ! Scheduling of alarms
+    // ! Provide this function the Time sent through UAC in the format of hour and minute
+    // private fun scheduleAlarm(hour: Int, minute: Int) {
+    //     val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    //     val intent = Intent(this, AlarmBroadcastReceiver::class.java)
 
+    //     val pendingIntent = PendingIntent.getBroadcast(
+    //         this,
+    //         0,
+    //         intent,
+    //         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    //     )
+
+    //     val calendar = Calendar.getInstance().apply {
+    //         set(Calendar.HOUR_OF_DAY, hour)
+    //         set(Calendar.MINUTE, minute)
+    //         set(Calendar.SECOND, 0)
+    //         set(Calendar.MILLISECOND, 0)
+    //         if (before(Calendar.getInstance())) {
+    //             add(Calendar.DATE, 1)
+    //         }
+    //     }
+
+    //     Log.d("New Alarm", "Scheduling NEW alarm with at ${calendar.time}")
+
+    //     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    //         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
+    // calendar.timeInMillis, pendingIntent)
+    //     } else {
+    //         alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+    //     }
+    // }
+
+    //! Schedules alarm with an ID, used for updating existing alarms
+    private fun scheduleAlarm(id: Int, hour: Int, minute: Int) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, AlarmBroadcastReceiver::class.java)
+        val intent =
+                Intent(this, AlarmBroadcastReceiver::class.java).apply {
+                    action = "com.example.uac_companion.ALARM_TRIGGERED_$id"
+                    putExtra("alarm_id", id)
+                }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent =
+                PendingIntent.getBroadcast(
+                        this,
+                        id,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
 
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (before(Calendar.getInstance())) {
-                add(Calendar.DATE, 1)
-            }
-        }
+        val calendar =
+                Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                    if (before(Calendar.getInstance())) {
+                        add(Calendar.DATE, 1)
+                    }
+                }
+
+        Log.d("Updating Alarm", "Scheduling updated alarm with ID $id at ${calendar.time}")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+            )
         } else {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
         }
+    }
+
+    //! Cancels an alarm with a given ID
+    private fun cancelAlarm(id: Int) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    
+        val intent = Intent(this, AlarmBroadcastReceiver::class.java).apply {
+            action = "com.example.uac_companion.ALARM_TRIGGERED_$id"
+            putExtra("alarm_id", id)
+        }
+    
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            id,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+        // PendingIntent.getBroadcast(context, 0, intent,PendingIntent.FLAG_UPDATE_CURRENT).cancel();
+        Log.d("Alarm", "Cancelled alarm with ID $id")
     }
 }

@@ -1,0 +1,98 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:flutter/services.dart';
+
+class TimePickerController extends GetxController {
+  static const platform = MethodChannel('alarm_channel');
+
+  final int? initialHour;
+  final int? initialMinute;
+  final int? alarmId;
+
+  var selectedHour = 7.obs;
+  var selectedMinute = 30.obs;
+  var selectedPeriod = 'AM'.obs;
+  var selectedIconIndex = 1.obs;
+
+  late FixedExtentScrollController hourController;
+  late FixedExtentScrollController minuteController;
+  late FixedExtentScrollController periodController;
+
+  TimePickerController({
+    this.initialHour,
+    this.initialMinute,
+    this.alarmId,
+  });
+
+  @override
+  void onInit() {
+    super.onInit();
+    debugPrint(
+        "🔁 TimePickerController initialized with alarmId=$alarmId, hour=$initialHour, minute=$initialMinute");
+    final hour24 = initialHour ?? DateTime.now().hour;
+    final minute = initialMinute ?? DateTime.now().minute;
+
+    selectedHour.value = hour24 == 0
+        ? 12
+        : hour24 > 12
+            ? hour24 - 12
+            : hour24;
+    selectedMinute.value = minute;
+    selectedPeriod.value = hour24 >= 12 ? 'PM' : 'AM';
+
+    hourController =
+        FixedExtentScrollController(initialItem: selectedHour.value - 1);
+    minuteController =
+        FixedExtentScrollController(initialItem: selectedMinute.value);
+    periodController = FixedExtentScrollController(
+        initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
+  }
+
+  //! Just send the alarm with all the details(we will handle the rest in the native code)
+  Future<void> scheduleAlarm(int hour, int minute, int? alarmId) async {
+    try {
+      debugPrint("before scheduleAlarm flutter- hour=$hour, minute=$minute, alarmId=$alarmId");
+      await platform.invokeMethod('scheduleAlarm', {
+        'hour': hour,
+        'minute': minute,
+        'alarmId': alarmId,
+      });
+    } on PlatformException catch (e) {
+      debugPrint("Failed to schedule alarm: '${e.message}'.");
+    }
+  }
+
+//! Confirm button on time_picker_view.dart
+  Future<void> confirmTime() async {
+    int finalHour;
+    if (selectedPeriod.value == 'AM') {
+      finalHour = selectedHour.value == 12 ? 0 : selectedHour.value;
+    } else {
+      finalHour = selectedHour.value == 12 ? 12 : selectedHour.value + 12;
+    }
+
+    await scheduleAlarm(finalHour, selectedMinute.value, alarmId);
+
+    Get.back(result: {
+      'hour': finalHour,
+      'minute': selectedMinute.value,
+      'alarmId': alarmId,
+    });
+  }
+
+  void setHour(int hour) {
+    selectedHour.value = hour;
+  }
+
+  void setMinute(int minute) {
+    selectedMinute.value = minute;
+  }
+
+  void setPeriod(String period) {
+    selectedPeriod.value = period;
+  }
+
+  void setSelectedIcon(int index) {
+    selectedIconIndex.value = index;
+  }
+}

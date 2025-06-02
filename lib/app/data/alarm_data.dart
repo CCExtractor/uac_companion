@@ -14,12 +14,17 @@ class Alarm {
     this.enabled = true,
   });
 
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'time': time,
-        'days': days,
-        'enabled': enabled ? 1 : 0,
-      };
+  Map<String, dynamic> toMap() {
+    final map = {
+      'time': time,
+      'days': days,
+      'enabled': enabled ? 1 : 0,
+    };
+    if (id != null) {
+      map['id'] = id as Object;
+    }
+    return map;
+  }
 
   factory Alarm.fromMap(Map<String, dynamic> map) => Alarm(
         id: map['id'],
@@ -63,9 +68,16 @@ class AlarmDatabase {
     ''');
   }
 
-  Future<int> insertAlarm(Alarm alarm) async {
+  Future<Alarm> insertAlarm(Alarm alarm) async {
     final db = await instance.database;
-    return await db.insert('alarms', alarm.toMap());
+    final id = await db.insert('alarms', alarm.toMap());
+
+    return Alarm(
+      id: id,
+      time: alarm.time,
+      days: alarm.days,
+      enabled: alarm.enabled,
+    );
   }
 
   Future<List<Alarm>> getAlarms() async {
