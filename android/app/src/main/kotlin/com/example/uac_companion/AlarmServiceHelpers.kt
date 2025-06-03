@@ -5,7 +5,7 @@ import android.os.Vibrator
 
 const val NOTIFICATION_ID = 1001
 
-object AlarmServiceHolder {
-    var ringtone: Ringtone? = null
-    var vibrator: Vibrator? = null
-}
+// object AlarmServiceHolder {
+//     var ringtone: Ringtone? = null
+//     var vibrator: Vibrator? = null
+// }
