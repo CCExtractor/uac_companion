@@ -62,8 +62,7 @@ class HomeController extends GetxController {
   }
 
   //! Navigate to Time Picker
-  Future<void> navigateToTimePicker(BuildContext context,
-      {Alarm? alarm}) async {
+  Future<void> navigateToTimePicker(BuildContext context,{Alarm? alarm}) async {
     int? initialHour;
     int? initialMinute;
     int? alarmId;
@@ -74,10 +73,8 @@ class HomeController extends GetxController {
       int hour = int.parse(parts[0]);
       final int minute = int.parse(parts[1]);
       final String amPm = parts[2];
-
       if (amPm == 'PM' && hour != 12) hour += 12;
       if (amPm == 'AM' && hour == 12) hour = 0;
-
       initialHour = hour;
       initialMinute = minute;
       alarmId = alarm.id;
@@ -112,45 +109,44 @@ class HomeController extends GetxController {
           enabled: alarm?.enabled ?? true,
         );
         await AlarmDatabase.instance.updateAlarm(updatedAlarm);
-      // } else {
-      //   //! Add new alarm
-      //   final newAlarm = Alarm(
-      //     time: formattedTime,
-      //     days: 'Once',
-      //     enabled: true,
-      //   );
-      //   await AlarmDatabase.instance.insertAlarm(newAlarm);
-      // }
+        // } else {
+        //   //! Add new alarm
+        //   final newAlarm = Alarm(
+        //     time: formattedTime,
+        //     days: 'Once',
+        //     enabled: true,
+        //   );
+        //   await AlarmDatabase.instance.insertAlarm(newAlarm);
+        // }
       } else {
-  //! Add new alarm and schedule it with the returned ID
-  final insertedAlarm = await AlarmDatabase.instance.insertAlarm(
-    Alarm(
-      time: formattedTime,
-      days: 'Once',
-      enabled: true,
-    ),
-  );
+        //! Add new alarm and schedule it with the returned ID
+        final insertedAlarm = await AlarmDatabase.instance.insertAlarm(
+          Alarm(
+            time: formattedTime,
+            days: 'Once',
+            enabled: true,
+          ),
+        );
 
-  debugPrint('New alarm inserted with ID=${insertedAlarm.id}, time=$formattedTime');
+        debugPrint('New alarm inserted with ID=${insertedAlarm.id}, time=$formattedTime');
 
-  // Extract hour and minute for native scheduling
-  int scheduleHour = hour;
-  int scheduleMinute = minute;
+        // Extract hour and minute for native scheduling
+        int scheduleHour = hour;
+        int scheduleMinute = minute;
 
-  try {
-    await const MethodChannel('alarm_channel').invokeMethod(
-      'scheduleAlarm',
-      {
-        'alarmId': insertedAlarm.id,
-        'hour': scheduleHour,
-        'minute': scheduleMinute,
-      },
-    );
-  } catch (e) {
-    debugPrint('Error scheduling new alarm: $e');
-  }
-}
-
+        try {
+          await const MethodChannel('alarm_channel').invokeMethod(
+            'scheduleAlarm',
+            {
+              'alarmId': insertedAlarm.id,
+              'hour': scheduleHour,
+              'minute': scheduleMinute,
+            },
+          );
+        } catch (e) {
+          debugPrint('Error scheduling new alarm: $e');
+        }
+      }
 
       await loadAlarms();
     }

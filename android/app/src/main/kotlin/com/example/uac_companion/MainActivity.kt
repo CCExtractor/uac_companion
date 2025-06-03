@@ -36,7 +36,7 @@ class MainActivity : FlutterActivity() {
 
                     Log.d(
                             "FlutterToNative",
-                            "kotline scheduleAlarm=$id, hour=$hour, minute=$minute"
+                            "kotline scheduleAlarm - alarmId=$id, hour=$hour, minute=$minute"
                     )
                     if (id != null && hour != null && minute != null) {
                         scheduleAlarm(id, hour, minute)
@@ -107,77 +107,97 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    // ! Scheduling of alarms
-    // ! Provide this function the Time sent through UAC in the format of hour and minute
-    // private fun scheduleAlarm(hour: Int, minute: Int) {
+    //! Insert the alarm recevived from UAC in the SQLite first and then call this fucntion with ID, hour, and minute
+    // private fun scheduleAlarm(id: Int, hour: Int, minute: Int) {
     //     val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    //     val intent = Intent(this, AlarmBroadcastReceiver::class.java)
+    //     val intent =
+    //             Intent(this, AlarmBroadcastReceiver::class.java).apply {
+    //                 action = "com.example.uac_companion.ALARM_TRIGGERED_$id"
+    //                 putExtra("alarm_id", id)
+    //             }
 
-    //     val pendingIntent = PendingIntent.getBroadcast(
-    //         this,
-    //         0,
-    //         intent,
-    //         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    //     )
+    //     val pendingIntent =
+    //             PendingIntent.getBroadcast(
+    //                     this,
+    //                     id,
+    //                     intent,
+    //                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    //             )
 
-    //     val calendar = Calendar.getInstance().apply {
-    //         set(Calendar.HOUR_OF_DAY, hour)
-    //         set(Calendar.MINUTE, minute)
-    //         set(Calendar.SECOND, 0)
-    //         set(Calendar.MILLISECOND, 0)
-    //         if (before(Calendar.getInstance())) {
-    //             add(Calendar.DATE, 1)
-    //         }
-    //     }
+    //     val calendar =
+    //             Calendar.getInstance().apply {
+    //                 set(Calendar.HOUR_OF_DAY, hour)
+    //                 set(Calendar.MINUTE, minute)
+    //                 set(Calendar.SECOND, 0)
+    //                 set(Calendar.MILLISECOND, 0)
+    //                 if (before(Calendar.getInstance())) {
+    //                     add(Calendar.DATE, 1)
+    //                 }
+    //             }
 
-    //     Log.d("New Alarm", "Scheduling NEW alarm with at ${calendar.time}")
+    //     Log.d("Updating Alarm", "Scheduling updated alarm with ID $id at ${calendar.time}")
 
     //     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-    //         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
-    // calendar.timeInMillis, pendingIntent)
+    //         alarmManager.setExactAndAllowWhileIdle(
+    //                 AlarmManager.RTC_WAKEUP,
+    //                 calendar.timeInMillis,
+    //                 pendingIntent
+    //         )
     //     } else {
     //         alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
     //     }
     // }
-
-    //! Schedules alarm with an ID, used for updating existing alarms
     private fun scheduleAlarm(id: Int, hour: Int, minute: Int) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent =
-                Intent(this, AlarmBroadcastReceiver::class.java).apply {
-                    action = "com.example.uac_companion.ALARM_TRIGGERED_$id"
-                    putExtra("alarm_id", id)
-                }
-
-        val pendingIntent =
-                PendingIntent.getBroadcast(
-                        this,
-                        id,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-        val calendar =
-                Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, minute)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                    if (before(Calendar.getInstance())) {
-                        add(Calendar.DATE, 1)
-                    }
-                }
-
-        Log.d("Updating Alarm", "Scheduling updated alarm with ID $id at ${calendar.time}")
-
+    
+        val cancelIntent = Intent(this, AlarmBroadcastReceiver::class.java).apply {
+            action = "com.example.uac_companion.ALARM_TRIGGERED_$id"
+            putExtra("alarm_id", id)
+        }
+    
+        val cancelPendingIntent = PendingIntent.getBroadcast(
+            this,
+            id,
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(cancelPendingIntent)
+    
+        // Then reschedule with new time
+        val newIntent = Intent(this, AlarmBroadcastReceiver::class.java).apply {
+            action = "com.example.uac_companion.ALARM_TRIGGERED_$id"
+            putExtra("alarm_id", id)
+        }
+    
+        val newPendingIntent = PendingIntent.getBroadcast(
+            this,
+            id,
+            newIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (before(Calendar.getInstance())) add(Calendar.DATE, 1)
+        }
+    
+        Log.d("Alarm", "Scheduling alarm with ID=$id at ${calendar.time}")
+    
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                newPendingIntent
             )
         } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            alarmManager.setExact(
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                newPendingIntent
+            )
         }
     }
 
@@ -199,7 +219,6 @@ class MainActivity : FlutterActivity() {
     
         alarmManager.cancel(pendingIntent)
         pendingIntent.cancel()
-        // PendingIntent.getBroadcast(context, 0, intent,PendingIntent.FLAG_UPDATE_CURRENT).cancel();
         Log.d("Alarm", "Cancelled alarm with ID $id")
     }
 }

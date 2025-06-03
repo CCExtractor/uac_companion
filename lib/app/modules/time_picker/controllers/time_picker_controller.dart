@@ -71,13 +71,17 @@ class TimePickerController extends GetxController {
       finalHour = selectedHour.value == 12 ? 12 : selectedHour.value + 12;
     }
 
-    await scheduleAlarm(finalHour, selectedMinute.value, alarmId);
-
     Get.back(result: {
       'hour': finalHour,
       'minute': selectedMinute.value,
       'alarmId': alarmId,
     });
+
+    await scheduleAlarm(
+      finalHour,
+      selectedMinute.value,
+      alarmId,
+    );
   }
 
   void setHour(int hour) {

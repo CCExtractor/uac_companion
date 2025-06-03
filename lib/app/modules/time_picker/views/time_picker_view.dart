@@ -123,6 +123,11 @@ class _TimePickerViewState extends State<TimePickerView> {
                           controller.setSelectedIcon(1);
                           // controller.confirmTime(widget.alarmId);
                           controller.confirmTime();
+                          // controller.scheduleAlarm(
+                          //   controller.selectedHour.value,
+                          //   controller.selectedMinute.value,
+                          //   widget.alarmId,
+                          // );
                         }, controller.selectedIconIndex.value == 1),
                         _buildIconButton(2, Icons.notifications_active, () {
                           controller.setSelectedIcon(2);
