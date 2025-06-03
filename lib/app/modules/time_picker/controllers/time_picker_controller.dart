@@ -28,7 +28,7 @@ class TimePickerController extends GetxController {
   void onInit() {
     super.onInit();
     debugPrint(
-        "🔁 TimePickerController initialized with alarmId=$alarmId, hour=$initialHour, minute=$initialMinute");
+        "TimePickerController initialized with alarmId=$alarmId, hour=$initialHour, minute=$initialMinute");
     final hour24 = initialHour ?? DateTime.now().hour;
     final minute = initialMinute ?? DateTime.now().minute;
 
@@ -48,20 +48,6 @@ class TimePickerController extends GetxController {
         initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
   }
 
-  //! Just send the alarm with all the details(we will handle the rest in the native code)
-  Future<void> scheduleAlarm(int hour, int minute, int? alarmId) async {
-    try {
-      debugPrint("before scheduleAlarm flutter- hour=$hour, minute=$minute, alarmId=$alarmId");
-      await platform.invokeMethod('scheduleAlarm', {
-        'hour': hour,
-        'minute': minute,
-        'alarmId': alarmId,
-      });
-    } on PlatformException catch (e) {
-      debugPrint("Failed to schedule alarm: '${e.message}'.");
-    }
-  }
-
 //! Confirm button on time_picker_view.dart
   Future<void> confirmTime() async {
     int finalHour;
@@ -76,12 +62,6 @@ class TimePickerController extends GetxController {
       'minute': selectedMinute.value,
       'alarmId': alarmId,
     });
-
-    await scheduleAlarm(
-      finalHour,
-      selectedMinute.value,
-      alarmId,
-    );
   }
 
   void setHour(int hour) {

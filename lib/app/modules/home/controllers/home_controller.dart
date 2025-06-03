@@ -62,7 +62,8 @@ class HomeController extends GetxController {
   }
 
   //! Navigate to Time Picker
-  Future<void> navigateToTimePicker(BuildContext context,{Alarm? alarm}) async {
+  Future<void> navigateToTimePicker(BuildContext context,
+      {Alarm? alarm}) async {
     int? initialHour;
     int? initialMinute;
     int? alarmId;
@@ -109,15 +110,20 @@ class HomeController extends GetxController {
           enabled: alarm?.enabled ?? true,
         );
         await AlarmDatabase.instance.updateAlarm(updatedAlarm);
-        // } else {
-        //   //! Add new alarm
-        //   final newAlarm = Alarm(
-        //     time: formattedTime,
-        //     days: 'Once',
-        //     enabled: true,
-        //   );
-        //   await AlarmDatabase.instance.insertAlarm(newAlarm);
-        // }
+
+        // Reschedule updated alarm natively
+        try {
+          await const MethodChannel('alarm_channel').invokeMethod(
+            'scheduleAlarm',
+            {
+              'alarmId': updatedAlarm.id,
+              'hour': hour,
+              'minute': minute,
+            },
+          );
+        } catch (e) {
+          debugPrint('Error rescheduling updated alarm: $e');
+        }
       } else {
         //! Add new alarm and schedule it with the returned ID
         final insertedAlarm = await AlarmDatabase.instance.insertAlarm(
@@ -128,7 +134,8 @@ class HomeController extends GetxController {
           ),
         );
 
-        debugPrint('New alarm inserted with ID=${insertedAlarm.id}, time=$formattedTime');
+        debugPrint(
+            'New alarm inserted with ID=${insertedAlarm.id}, time=$formattedTime');
 
         // Extract hour and minute for native scheduling
         int scheduleHour = hour;
