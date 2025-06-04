@@ -21,14 +21,21 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
     
         // Reschedule alarm after 1 minutes
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val newIntent = Intent(context, AlarmBroadcastReceiver::class.java)
+        val alarmId = intent.getIntExtra("alarmId", -1)
+        Log.d("AlarmSnoozeReceiver", "Snoozing alarm with ID=$alarmId")
+        
+        val newIntent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
+            putExtra("alarmId", alarmId)
+            action = "com.example.uac_companion.ALARM_TRIGGERED_$alarmId"
+        }
+        
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            //! doubt
-            999, // Unique snooze ID or original alarm ID
+            alarmId, // Reuse original alarm ID
             newIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        
     
         val triggerAt = System.currentTimeMillis() + 1 * 60 * 1000
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

@@ -84,7 +84,10 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
-        val snoozeIntent = Intent(context, AlarmSnoozeReceiver::class.java)
+        val snoozeIntent = Intent(context, AlarmSnoozeReceiver::class.java).apply {
+            action = "com.yourpackage.ALARM_SNOOZE_$alarmId"
+            putExtra("alarmId", alarmId)
+        }
         val snoozePendingIntent =
                 PendingIntent.getBroadcast(
                         context,

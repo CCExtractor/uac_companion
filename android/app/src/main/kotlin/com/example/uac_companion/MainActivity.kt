@@ -148,7 +148,7 @@ class MainActivity : FlutterActivity() {
         val intent =
                 Intent(context, AlarmBroadcastReceiver::class.java).apply {
                     action = "com.example.uac_companion.ALARM_TRIGGERED_$alarmId"
-                    putExtra("alarm_id", alarmId)
+                    putExtra("alarmId", alarmId)
                 }
         val pendingIntent =
                 PendingIntent.getBroadcast(
