@@ -37,7 +37,7 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
         }
     
-        Log.d("AlarmSnoozeReceiver", "Alarm snoozed to ${Date(triggerAt)}")
+        Log.d("AlarmSnoozeReceiver", "Alarm snoozed to $triggerAt}")
     }
     
 }

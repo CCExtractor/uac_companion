@@ -107,7 +107,8 @@ class HomeController extends GetxController {
           id: id,
           time: formattedTime,
           days: alarm?.days ?? 'Once',
-          enabled: alarm?.enabled ?? true,
+          // enabled: alarm?.enabled ?? true,
+          enabled: true,
         );
         await AlarmDatabase.instance.updateAlarm(updatedAlarm);
 

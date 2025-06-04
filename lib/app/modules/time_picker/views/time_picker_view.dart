@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/colors.dart';
 import '../controllers/time_picker_controller.dart';
-import '../../../views/more_option_screen.dart';
-import '../../../views/smart_control.dart';
+import '../../more_option_screen.dart';
+import '../../smart_control.dart';
 import '../../../../watch_shape.dart';
 
 class TimePickerView extends StatefulWidget {
