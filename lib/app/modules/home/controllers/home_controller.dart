@@ -159,4 +159,21 @@ class HomeController extends GetxController {
       await loadAlarms();
     }
   }
+
+  //! Press & hold to delete alarm
+  Future<void> deleteAlarm(Alarm alarm) async {
+    debugPrint('Deleting alarm ID=${alarm.id}');
+    if (alarm.id != null) {
+      await AlarmDatabase.instance.deleteAlarm(alarm.id!);
+    }
+
+    alarms.removeWhere((a) => a.id == alarm.id); // Flutter list
+
+    const platform = MethodChannel('alarm_channel');
+    try {
+      await platform.invokeMethod('cancelAlarm', {'id': alarm.id}); // Native
+    } catch (e) {
+      print('Alarm cancel failed: $e');
+    }
+  }
 }

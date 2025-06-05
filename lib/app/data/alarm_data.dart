@@ -96,12 +96,9 @@ class AlarmDatabase {
     );
   }
 
-  Future<int> deleteAlarm(int id) async {
-    final db = await instance.database;
-    return await db.delete(
-      'alarms',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
+  Future<void> deleteAlarm(int id) async {
+  final db = await instance.database;
+  await db.delete('alarms', where: 'id = ?', whereArgs: [id]);
+}
+
 }
