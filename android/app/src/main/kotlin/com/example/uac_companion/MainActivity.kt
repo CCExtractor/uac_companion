@@ -33,16 +33,13 @@ class MainActivity : FlutterActivity() {
                     val hour = call.argument<Int>("hour")
                     val minute = call.argument<Int>("minute")
                     val id = call.argument<Int>("alarmId")
+                    val days = call.argument<String>("days") ?: "Once"
 
-                    Log.d(
-                            "FlutterToNative",
-                            "kotline scheduleAlarm - alarmId=$id, hour=$hour, minute=$minute"
-                    )
                     if (id != null && hour != null && minute != null) {
-                        scheduleAlarm(id, hour, minute)
+                        scheduleAlarm(id, hour, minute, days)
                         result.success(null)
                     } else {
-                        result.error("INVALID_ARGS", "ID, hour or minute missing", null)
+                        result.error("INVALID_ARGS", "ID, hour, or minute missing", null)
                     }
                 }
                 // ! handles calls from toggle button in the alarm screen
@@ -107,65 +104,153 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    // ! Insert the alarm recevived from UAC in the SQLite first and then call this fucntion with
-    private fun scheduleAlarm(id: Int, hour: Int, minute: Int) {
+    // ! Insert the alarm recevived from UAC in the SQLite first and then call this fucntion.
+    private fun scheduleAlarm(id: Int, hour: Int, minute: Int, days: String) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        Log.d("AlarmDebug", "Attempting to schedule alarm ID=$id at $hour:$minute")
+        Log.d("Kotlin-AlarmDebug", "Scheduling alarm with ID=$id, time=$hour:$minute, days=$days")
 
-        cancelExistingAlarm(this, id)
+        cancelExistingAlarmsForId(id)
 
-        val pendingIntent = createAlarmPendingIntent(this, id)
-        val calendar =
-                Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, minute)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                    if (before(Calendar.getInstance())) add(Calendar.DATE, 1)
+        // Parse the days string into a list of Calendar.DAY_OF_WEEK constants
+        val daysList =
+                when (days) {
+                    "Once" -> listOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))
+                    "Weekdays" ->
+                            listOf(
+                                    Calendar.MONDAY,
+                                    Calendar.TUESDAY,
+                                    Calendar.WEDNESDAY,
+                                    Calendar.THURSDAY,
+                                    Calendar.FRIDAY
+                            )
+                    "Daily" ->
+                            listOf(
+                                    Calendar.SUNDAY,
+                                    Calendar.MONDAY,
+                                    Calendar.TUESDAY,
+                                    Calendar.WEDNESDAY,
+                                    Calendar.THURSDAY,
+                                    Calendar.FRIDAY,
+                                    Calendar.SATURDAY
+                            )
+                    else -> {
+                        days.split(",")
+                                .mapNotNull { dayStr ->
+                                    dayStr.trim().toIntOrNull()?.let { dayNum ->
+                                        // Add 1 to convert 0-based (Sunday=0) to Calendar constants (Sunday=1)
+                                        val androidDay = dayNum + 1
+                                        if (androidDay in 1..7) androidDay else null
+                                    }
+                                }
+                                .ifEmpty { listOf(-1) }
+                    }
                 }
+        Log.d("Kotlin-AlarmDebug", "Parsed days list: $daysList")
 
-        Log.d("AlarmDebug", "Final scheduled time for ID=$id is: ${calendar.time}")
+        val now = Calendar.getInstance()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-            )
+        if (daysList.contains(-1)) {
+            // ! One-time alarm
+            val calendar =
+                    Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, hour)
+                        set(Calendar.MINUTE, minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                        if (before(now)) add(Calendar.DAY_OF_YEAR, 1)
+                    }
+
+            val pendingIntent = createAlarmPendingIntent(this, id, id * 10)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                )
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            }
+            Log.d("Kotlin-AlarmDebug", "1-time alarm scheduled with ID=$id at ${calendar.time}")
         } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            // ! Repeat alarms for given days
+            for (dayOfWeek in daysList) {
+                val calendar =
+                        Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, hour)
+                            set(Calendar.MINUTE, minute)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                            set(Calendar.DAY_OF_WEEK, dayOfWeek)
+                            if (before(now)) add(Calendar.WEEK_OF_YEAR, 1)
+                        }
+                val requestCode = generateRequestCode(id, dayOfWeek)
+                val pendingIntent = createAlarmPendingIntent(this, id, requestCode)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                    )
+                } else {
+                    alarmManager.setExact(
+                            AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                    )
+                }
+                Log.d(
+                        "Kotlin-AlarmDebug",
+                        "Scheduled alarm ID=$id for day $dayOfWeek at ${calendar.time}"
+                )
+            }
         }
-        Log.d("AlarmDebug", "Alarm scheduled with ID=$id")
     }
 
-    private fun cancelAlarm(id: Int) {
-        Log.d("AlarmDebug", "Attempting to cancel alarm with ID=$id")
-        cancelExistingAlarm(this, id)
-        Log.d("AlarmDebug", "Alarm cancelled with ID=$id")
+    private fun generateRequestCode(alarmId: Int, dayOfWeek: Int): Int {
+        return alarmId * 10 + dayOfWeek
     }
 
-    private fun createAlarmPendingIntent(context: Context, alarmId: Int): PendingIntent {
+    private fun cancelExistingAlarmsForId(alarmId: Int) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val oneTimeIntent = createAlarmPendingIntent(this, alarmId, alarmId * 10)
+        alarmManager.cancel(oneTimeIntent)
+        Log.d(
+                "Kotlin-AlarmDebug",
+                "Cancelling one-time alarm for ID=$alarmId (requestCode=${alarmId * 10})"
+        )
+
+        for (dayOfWeek in 1..7) {
+            val pendingIntent =
+                    createAlarmPendingIntent(this, alarmId, generateRequestCode(alarmId, dayOfWeek))
+            alarmManager.cancel(pendingIntent)
+            Log.d(
+                    "Kotlin-AlarmDebug",
+                    "Cancelling existing alarm for ID=$alarmId on dayOfWeek=$dayOfWeek"
+            )
+        }
+    }
+
+    private fun createAlarmPendingIntent(
+            context: Context,
+            alarmId: Int,
+            requestCode: Int
+    ): PendingIntent {
         val intent =
                 Intent(context, AlarmBroadcastReceiver::class.java).apply {
                     action = "com.example.uac_companion.ALARM_TRIGGERED_$alarmId"
                     putExtra("alarmId", alarmId)
                 }
-        val pendingIntent =
-                PendingIntent.getBroadcast(
-                        context,
-                        alarmId,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-        Log.d("AlarmDebug", "Created PendingIntent for alarmId=$alarmId, hash=${pendingIntent.hashCode()}")
-        return pendingIntent
+        return PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
-    private fun cancelExistingAlarm(context: Context, alarmId: Int) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pendingIntent = createAlarmPendingIntent(context, alarmId)
-
-        alarmManager.cancel(pendingIntent)
-        Log.d("AlarmDebug", "Cancelled any existing PendingIntent for alarmId=$alarmId")
+    private fun cancelAlarm(id: Int) {
+        Log.d("Kotlin-AlarmDebug", "Attempting to cancel alarm with ID=$id")
+        cancelExistingAlarmsForId(id)
+        Log.d("Kotlin-AlarmDebug", "Alarm cancelled with ID=$id")
     }
 }

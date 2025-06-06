@@ -1,19 +1,23 @@
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:uac_companion/app/modules/more/controller/more_settings_controller.dart';
 import '../../../data/alarm_data.dart';
 import 'package:flutter/material.dart';
 
 class HomeController extends GetxController {
   var alarms = <Alarm>[].obs;
+  late MoreSettingsController moreSettingsController;
 
   @override
   void onInit() {
     super.onInit();
+    moreSettingsController = Get.find<MoreSettingsController>();
     loadAlarms();
   }
 
   Future<void> loadAlarms() async {
     final loadedAlarms = await AlarmDatabase.instance.getAlarms();
+    debugPrint('Loaded ${loadedAlarms.length} alarms from database');
     alarms.assignAll(loadedAlarms);
   }
 
@@ -42,14 +46,23 @@ class HomeController extends GetxController {
         if (amPm == 'PM' && hour != 12) hour += 12;
         if (amPm == 'AM' && hour == 12) hour = 0;
 
+        // Send the alarm days as per the Android API requirements
+        // Android expects days as 1=Monday, 2=Tuesday, ..., 7=Sunday
+        // List<int> daysList =
+        //     updatedAlarm.days.split(',').map((e) => int.parse(e)).toList();
+        // List<int> androidDays = daysList.map((d) => d + 1).toList();
+      final androidDaysString = moreSettingsController.androidDaysString;
+
         await const MethodChannel('alarm_channel').invokeMethod(
           'scheduleAlarm',
           {
             'alarmId': updatedAlarm.id,
             'hour': hour,
             'minute': minute,
+            'days': androidDaysString,
           },
         );
+        await loadAlarms();
       } else {
         await const MethodChannel('alarm_channel').invokeMethod(
           'cancelAlarm',
@@ -62,11 +75,28 @@ class HomeController extends GetxController {
   }
 
   //! Navigate to Time Picker
-  Future<void> navigateToTimePicker(BuildContext context,
-      {Alarm? alarm}) async {
+  Future<void> navigateToTimePicker(BuildContext context, {Alarm? alarm}) async {
+    final moreSettingsController = Get.find<MoreSettingsController>();
     int? initialHour;
     int? initialMinute;
     int? alarmId;
+
+    if (alarm != null) {
+      // List<int> daysList;
+      // daysList = alarm.days.split(',').map((e) => int.parse(e)).toList();
+
+      // moreSettingsController.selectedDays.assignAll(daysList);
+      // Convert Android days (1-7) to Flutter days (0-6)
+List<int> daysList = alarm.days
+    .split(',')
+    .map((e) => (int.parse(e) - 1) % 7) // wrap Sunday (7 → 0)
+    .toList();
+moreSettingsController.selectedDays.assignAll(daysList);
+
+    } else {
+      // If new alarm, clear selectedDays
+      moreSettingsController.selectedDays.clear();
+    }
 
     if (alarm != null) {
       //! Parse time string: "hh:mm AM/PM"
@@ -81,6 +111,7 @@ class HomeController extends GetxController {
       alarmId = alarm.id;
     }
 
+    //! Navigate to Time Picker screen and wait for result
     final result = await Navigator.pushNamed(
       context,
       '/time_picker',
@@ -92,73 +123,65 @@ class HomeController extends GetxController {
     );
 
     if (result != null && result is Map<String, dynamic>) {
-      final int hour = result['hour'];
-      final int minute = result['minute'];
-      final int? id = result['alarmId'];
+  final int hour = result['hour'];
+  final int minute = result['minute'];
+  final int? id = result['alarmId'];
 
-      final hour12 = hour % 12 == 0 ? 12 : hour % 12;
-      final amPm = hour >= 12 ? 'PM' : 'AM';
-      final formattedTime =
-          '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $amPm';
+  final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+  final amPm = hour >= 12 ? 'PM' : 'AM';
+  final formattedTime = '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $amPm';
 
-      //! Update alarm
-      if (id != null) {
-        final updatedAlarm = Alarm(
-          id: id,
-          time: formattedTime,
-          days: alarm?.days ?? 'Once',
-          // enabled: alarm?.enabled ?? true,
-          enabled: true,
-        );
-        await AlarmDatabase.instance.updateAlarm(updatedAlarm);
+  // Use selectedDays from controller
+  final flutterDays = moreSettingsController.selectedDays;
+  final androidDaysString = flutterDaysToAndroidDaysString(flutterDays);
 
-        // Reschedule updated alarm natively
-        try {
-          await const MethodChannel('alarm_channel').invokeMethod(
-            'scheduleAlarm',
-            {
-              'alarmId': updatedAlarm.id,
-              'hour': hour,
-              'minute': minute,
-            },
-          );
-        } catch (e) {
-          debugPrint('Error rescheduling updated alarm: $e');
-        }
-      } else {
-        //! Add new alarm and schedule it with the returned ID
-        final insertedAlarm = await AlarmDatabase.instance.insertAlarm(
-          Alarm(
-            time: formattedTime,
-            days: 'Once',
-            enabled: true,
-          ),
-        );
-
-        debugPrint(
-            'New alarm inserted with ID=${insertedAlarm.id}, time=$formattedTime');
-
-        // Extract hour and minute for native scheduling
-        int scheduleHour = hour;
-        int scheduleMinute = minute;
-
-        try {
-          await const MethodChannel('alarm_channel').invokeMethod(
-            'scheduleAlarm',
-            {
-              'alarmId': insertedAlarm.id,
-              'hour': scheduleHour,
-              'minute': scheduleMinute,
-            },
-          );
-        } catch (e) {
-          debugPrint('Error scheduling new alarm: $e');
-        }
-      }
-
-      await loadAlarms();
-    }
+  if (id != null) {
+    //! UPDATE
+    final updatedAlarm = Alarm(
+      id: id,
+      time: formattedTime,
+      days: androidDaysString,
+      enabled: true,
+    );
+    await AlarmDatabase.instance.updateAlarm(updatedAlarm);
+    await const MethodChannel('alarm_channel').invokeMethod(
+      'scheduleAlarm',
+      {
+        'alarmId': updatedAlarm.id,
+        'hour': hour,
+        'minute': minute,
+        'days': androidDaysString,
+      },
+    );
+  } else {
+    //! SCHEDULE NEW
+    final insertedAlarm = await AlarmDatabase.instance.insertAlarm(
+      Alarm(
+        time: formattedTime,
+        days: androidDaysString,
+        enabled: true,
+      ),
+    );
+    await const MethodChannel('alarm_channel').invokeMethod(
+      'scheduleAlarm',
+      {
+        'alarmId': insertedAlarm.id,
+        'hour': hour,
+        'minute': minute,
+        'days': androidDaysString,
+      },
+    );
   }
+
+  await loadAlarms();
+}
+
+  }
+String flutterDaysToAndroidDaysString(List<int> flutterDays) {
+  // Android days are 1-based (Mon=1,...Sun=7)
+  List<int> androidDays = flutterDays.map((d) => d + 1).toList();
+  return androidDays.join(',');
+}
 
   //! Press & hold to delete alarm
   Future<void> deleteAlarm(Alarm alarm) async {
@@ -167,11 +190,12 @@ class HomeController extends GetxController {
       await AlarmDatabase.instance.deleteAlarm(alarm.id!);
     }
 
-    alarms.removeWhere((a) => a.id == alarm.id); // Flutter list
+    alarms.removeWhere((a) => a.id == alarm.id);
 
     const platform = MethodChannel('alarm_channel');
     try {
-      await platform.invokeMethod('cancelAlarm', {'id': alarm.id}); // Native
+      await platform.invokeMethod('cancelAlarm', {'id': alarm.id});
+      await loadAlarms();
     } catch (e) {
       print('Alarm cancel failed: $e');
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
+import 'package:uac_companion/app/modules/more/controller/more_settings_controller.dart';
 
 class TimePickerController extends GetxController {
   static const platform = MethodChannel('alarm_channel');
@@ -18,6 +19,8 @@ class TimePickerController extends GetxController {
   late FixedExtentScrollController minuteController;
   late FixedExtentScrollController periodController;
 
+  late MoreSettingsController moreSettingsController;
+
   TimePickerController({
     this.initialHour,
     this.initialMinute,
@@ -27,8 +30,11 @@ class TimePickerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    moreSettingsController = Get.find<MoreSettingsController>();
+
     debugPrint(
         "TimePickerController initialized with alarmId=$alarmId, hour=$initialHour, minute=$initialMinute");
+
     final hour24 = initialHour ?? DateTime.now().hour;
     final minute = initialMinute ?? DateTime.now().minute;
 
@@ -48,7 +54,7 @@ class TimePickerController extends GetxController {
         initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
   }
 
-//! Confirm button on time_picker_view.dart
+  //! We have gathered all the alarm data here and then send it back to the home_contoller and scheduled the alarm there.
   Future<void> confirmTime() async {
     int finalHour;
     if (selectedPeriod.value == 'AM') {
@@ -61,6 +67,7 @@ class TimePickerController extends GetxController {
       'hour': finalHour,
       'minute': selectedMinute.value,
       'alarmId': alarmId,
+      'days': moreSettingsController.selectedDays,
     });
   }
 

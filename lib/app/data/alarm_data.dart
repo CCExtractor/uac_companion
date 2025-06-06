@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -53,11 +54,11 @@ class AlarmDatabase {
     return await openDatabase(
       path,
       version: 1,
-      onCreate: _createDB,
+      onCreate: createDB,
     );
   }
 
-  Future _createDB(Database db, int version) async {
+  Future createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE alarms (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,6 +84,7 @@ class AlarmDatabase {
   Future<List<Alarm>> getAlarms() async {
     final db = await instance.database;
     final result = await db.query('alarms');
+    debugPrint("DB query result: $result");
     return result.map((json) => Alarm.fromMap(json)).toList();
   }
 

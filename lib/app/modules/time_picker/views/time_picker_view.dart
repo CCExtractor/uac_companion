@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/colors.dart';
 import '../controllers/time_picker_controller.dart';
-import '../../more_option_screen.dart';
+import '../../more/view/more_settings_view.dart';
 import '../../smart_control.dart';
 import '../../../../watch_shape.dart';
 
@@ -117,11 +117,10 @@ class _TimePickerViewState extends State<TimePickerView> {
                       children: [
                         _buildIconButton(0, Icons.more_vert, () {
                           controller.setSelectedIcon(0);
-                          Get.to(() => const MoreOptionsScreen());
+                          Get.to(() => const MoreSettingsView());
                         }, controller.selectedIconIndex.value == 0),
                         _buildIconButton(1, Icons.check, () {
                           controller.setSelectedIcon(1);
-                          // controller.confirmTime(widget.alarmId);
                           controller.confirmTime();
                           // controller.scheduleAlarm(
                           //   controller.selectedHour.value,

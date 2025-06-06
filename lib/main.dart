@@ -21,7 +21,6 @@ class MyApp extends StatelessWidget {
       builder: (context, shape, child) {
         final bool isRound = shape == WearShape.round;
 
-        // Only fetch, don't recreate
         final deviceController = Get.find<DeviceController>();
         deviceController.setShape(isRound);
 
