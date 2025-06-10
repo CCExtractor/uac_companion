@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class Alarm {
   final int? id;
   final String time;
-  final String days;
+  final List<int> days;
   final bool enabled;
 
   Alarm({
@@ -15,24 +15,29 @@ class Alarm {
     this.enabled = true,
   });
 
-  Map<String, dynamic> toMap() {
-    final map = {
-      'time': time,
-      'days': days,
-      'enabled': enabled ? 1 : 0,
-    };
-    if (id != null) {
-      map['id'] = id as Object;
-    }
-    return map;
+  Map<String, dynamic> toMap() => {
+    if (id != null) 'id': id,
+    'time': time,
+    'days': days.join(','),
+    'enabled': enabled ? 1 : 0,
+  };
+
+  factory Alarm.fromMap(Map<String, dynamic> map) {
+    final daysString = map['days'] as String? ?? '';
+    final daysList = daysString.isEmpty
+      ? <int>[]
+      : daysString.split(',').where((e) => e.trim().isNotEmpty).map(int.parse).toList();
+  
+    return Alarm(
+      id: map['id'] as int?,
+      time: map['time'] as String,
+      days: daysList,
+      enabled: (map['enabled'] == 1),
+    );
   }
 
-  factory Alarm.fromMap(Map<String, dynamic> map) => Alarm(
-        id: map['id'],
-        time: map['time'],
-        days: map['days'],
-        enabled: map['enabled'] == 1,
-      );
+  @override
+  String toString() => 'Alarm(id: $id, time: $time, days: $days, enabled: $enabled)';
 }
 
 class AlarmDatabase {
@@ -61,7 +66,7 @@ class AlarmDatabase {
   Future createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE alarms (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         time TEXT NOT NULL,
         days TEXT NOT NULL,
         enabled INTEGER NOT NULL
@@ -69,17 +74,40 @@ class AlarmDatabase {
     ''');
   }
 
-  Future<Alarm> insertAlarm(Alarm alarm) async {
-    final db = await instance.database;
-    final id = await db.insert('alarms', alarm.toMap());
+  // Future<Alarm> insertAlarm(Alarm alarm) async {
+  //   final db = await instance.database;
+  //   final id = await db.insert('alarms', alarm.toMap());
 
-    return Alarm(
-      id: id,
-      time: alarm.time,
-      days: alarm.days,
-      enabled: alarm.enabled,
-    );
-  }
+  //   return Alarm(
+  //     id: id,
+  //     time: alarm.time,
+  //     days: alarm.days,
+  //     enabled: alarm.enabled,
+  //   );
+  // }
+  Future<Alarm> insertAlarm(Alarm alarm) async {
+  final db = await instance.database;
+
+  // Get current max id in DB
+  final maxIdResult = await db.rawQuery('SELECT MAX(id) as max_id FROM alarms');
+  int maxId = maxIdResult.first['max_id'] as int? ?? 10000;
+
+  // New ID = maxId + 1
+  final newId = maxId + 1;
+
+  // Create new Alarm with manual ID
+  final alarmWithId = Alarm(
+    id: newId,
+    time: alarm.time,
+    days: alarm.days,
+    enabled: alarm.enabled,
+  );
+
+  // Insert with manual ID
+  await db.insert('alarms', alarmWithId.toMap());
+
+  return alarmWithId;
+}
 
   Future<List<Alarm>> getAlarms() async {
     final db = await instance.database;
@@ -102,5 +130,4 @@ class AlarmDatabase {
   final db = await instance.database;
   await db.delete('alarms', where: 'id = ?', whereArgs: [id]);
 }
-
 }

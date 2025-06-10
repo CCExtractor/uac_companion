@@ -26,12 +26,5 @@ class AlarmDismissReceiver : BroadcastReceiver() {
 
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
         Log.d("AlarmDismissReceiver", "Notification cancelled")
-
-        // val alarmId = intent?.getIntExtra("alarm_id", -1) ?: -1
-        // if (alarmId != -1) {
-        //     val mainActivity = MainActivity()
-        //     mainActivity.cancelAlarm(alarmId)
-        //     Log.d("AlarmDismissReceiver", "Scheduled alarm cancelled for id=$alarmId")
-        // }
     }
 }

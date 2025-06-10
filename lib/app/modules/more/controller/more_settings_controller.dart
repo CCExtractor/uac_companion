@@ -13,8 +13,7 @@ class MoreSettingsController extends GetxController {
     }
   }
 
-  /// Converts Flutter day index (0=Mon, ..., 6=Sun)
-  /// to Android day (1=Sun, ..., 7=Sat) with wrap-around
+  /// Converts Flutter day index (0=Mon, ..., 6=Sun) to Android day (1=Sun, ..., 7=Sat) with wrap-around
   int flutterDayToAndroidDay(int day) {
     int androidDay = day + 2;
     if (androidDay > 7) androidDay -= 7;

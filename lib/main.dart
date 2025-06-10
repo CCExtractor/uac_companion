@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uac_companion/app/routes/app_routes.dart';
@@ -7,7 +6,6 @@ import 'app/routes/app_pages.dart';
 import './watch_shape.dart';
 
 void main() {
-  // Register DeviceController only once globally before any UI
   Get.put(DeviceController());
   runApp(const MyApp());
 }

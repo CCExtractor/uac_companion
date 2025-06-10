@@ -13,6 +13,26 @@ class HomeView extends StatelessWidget {
     final HomeController controller = Get.find();
     final deviceController = Get.find<DeviceController>();
 
+    String daysListToString(List<int> days) {
+      if (days.isEmpty) return 'Once';
+
+      final daysSet = days.toSet();
+      const allDays = {0, 1, 2, 3, 4, 5, 6};
+      const weekdays = {0, 1, 2, 3, 4};
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+      if (daysSet.length == allDays.length && daysSet.containsAll(allDays)) {
+        return 'Daily';
+      }
+
+      if (daysSet.length == weekdays.length && daysSet.containsAll(weekdays)) {
+        return 'Weekdays';
+      }
+
+      final sortedDays = days.toList()..sort();
+      return sortedDays.map((d) => dayNames[d]).join(', ');
+    }
+
     return Obx(() {
       final isRound = deviceController.isRound.value;
 
@@ -91,7 +111,7 @@ class HomeView extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    alarm.days,
+                                    daysListToString(alarm.days),
                                     style: TextStyle(
                                       color: AppColors.green,
                                       fontSize: isRound ? 8 : 10,
@@ -106,14 +126,6 @@ class HomeView extends StatelessWidget {
                                             fontSize: isRound ? 16 : 20,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: alarm.time.split(' ')[1],
-                                          style: TextStyle(
-                                            fontSize: isRound ? 10 : 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white70,
                                           ),
                                         ),
                                       ],
