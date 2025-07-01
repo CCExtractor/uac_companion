@@ -1,70 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uac_companion/app/routes/app_routes.dart';
+import 'package:uac_companion/app/utils/watch_shape_service.dart';
 import '../../../utils/colors.dart';
-import '../controllers/time_picker_controller.dart';
+import '../controllers/alarm_setup_controllers.dart';
 import '../../more/view/more_settings_view.dart';
 import '../../smart_control.dart';
-import '../../../../watch_shape.dart';
 
-class TimePickerView extends StatefulWidget {
-  final int? initialHour;
-  final int? initialMinute;
-  final int? alarmId;
-
-  const TimePickerView({
-    super.key,
-    this.initialHour,
-    this.initialMinute,
-    this.alarmId,
-  });
-
-  @override
-  State<TimePickerView> createState() => _TimePickerViewState();
-}
-
-class _TimePickerViewState extends State<TimePickerView> {
-  late final TimePickerController controller;
-
-  late FixedExtentScrollController hourController;
-  late FixedExtentScrollController minuteController;
-  late FixedExtentScrollController periodController;
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = Get.put(TimePickerController(
-      // isRound: Get.find<DeviceController>().isRound.value,
-      initialHour: widget.initialHour,
-      initialMinute: widget.initialMinute,
-      alarmId: widget.alarmId,
-    ));
-
-    final hour24 = widget.initialHour ?? DateTime.now().hour;
-    final minute = widget.initialMinute ?? DateTime.now().minute;
-
-    final selectedHour = hour24 == 0
-        ? 12
-        : hour24 > 12
-            ? hour24 - 12
-            : hour24;
-
-    final selectedMinute = minute;
-    final selectedPeriod = hour24 >= 12 ? 'PM' : 'AM';
-
-    controller.setHour(selectedHour);
-    controller.setMinute(selectedMinute);
-    controller.setPeriod(selectedPeriod);
-
-    hourController = FixedExtentScrollController(initialItem: selectedHour - 1);
-    minuteController = FixedExtentScrollController(initialItem: selectedMinute);
-    periodController = FixedExtentScrollController(
-        initialItem: selectedPeriod == 'AM' ? 0 : 1);
-  }
+class AlarmSetupView extends StatelessWidget {
+  const AlarmSetupView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isRound = Get.find<DeviceController>().isRound.value;
+    final controller = Get.find<AlarmSetupControllers>();
+    final isRound = WatchShapeService.isRound;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -76,8 +25,9 @@ class _TimePickerViewState extends State<TimePickerView> {
               children: [
                 Obx(() => Container(
                       padding: EdgeInsets.symmetric(
-                          vertical: isRound ? 8 : 10,
-                          horizontal: isRound ? 15 : 10),
+                        vertical: isRound ? 8 : 10,
+                        horizontal: isRound ? 15 : 10,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.grayBlack,
                         borderRadius: BorderRadius.circular(70),
@@ -86,28 +36,32 @@ class _TimePickerViewState extends State<TimePickerView> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _buildInfiniteScroll(
-                              1,
-                              12,
-                              controller.selectedHour.value,
-                              hourController,
-                              controller.setHour),
+                            1,
+                            12,
+                            controller.selectedHour.value,
+                            controller.hourController,
+                            controller.setHour,
+                          ),
                           Text(
                             ':',
                             style: TextStyle(
-                                fontSize: isRound ? 20 : 28,
-                                color: AppColors.notSeleted),
+                              fontSize: isRound ? 20 : 28,
+                              color: AppColors.notSeleted,
+                            ),
                           ),
                           _buildInfiniteScroll(
-                              0,
-                              59,
-                              controller.selectedMinute.value,
-                              minuteController,
-                              controller.setMinute),
+                            0,
+                            59,
+                            controller.selectedMinute.value,
+                            controller.minuteController,
+                            controller.setMinute,
+                          ),
                           _buildFixedScroll(
-                              ['AM', 'PM'],
-                              controller.selectedPeriod.value,
-                              periodController,
-                              controller.setPeriod),
+                            ['AM', 'PM'],
+                            controller.selectedPeriod.value,
+                            controller.periodController,
+                            controller.setPeriod,
+                          ),
                         ],
                       ),
                     )),
@@ -115,25 +69,21 @@ class _TimePickerViewState extends State<TimePickerView> {
                 Obx(() => Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildIconButton(0, Icons.more_vert, () {
-                          controller.setSelectedIcon(0);
-                          Get.to(() => const MoreSettingsView());
+                        _buildIconButton(0, Icons.more_vert, () async {
+                          final result =
+                              await Get.toNamed(AppRoutes.more_settings);
+                          if (result is List<int>) {
+                            controller.selectedDays.value = result;
+                          }
                         }, controller.selectedIconIndex.value == 0),
                         _buildIconButton(1, Icons.check, () {
-                          controller.setSelectedIcon(1);
                           controller.confirmTime();
-                          // controller.scheduleAlarm(
-                          //   controller.selectedHour.value,
-                          //   controller.selectedMinute.value,
-                          //   widget.alarmId,
-                          // );
                         }, controller.selectedIconIndex.value == 1),
                         _buildIconButton(2, Icons.notifications_active, () {
-                          controller.setSelectedIcon(2);
                           Get.to(() => const SmartControlsScreen());
                         }, controller.selectedIconIndex.value == 2),
                       ],
-                    ))
+                    )),
               ],
             ),
           ),
@@ -142,9 +92,14 @@ class _TimePickerViewState extends State<TimePickerView> {
     );
   }
 
-  Widget _buildInfiniteScroll(int min, int max, int selectedValue,
-      FixedExtentScrollController controller, Function(int) onChanged) {
-    final isRound = Get.find<DeviceController>().isRound.value;
+  Widget _buildInfiniteScroll(
+    int min,
+    int max,
+    int selectedValue,
+    FixedExtentScrollController controller,
+    Function(int) onChanged,
+  ) {
+    final isRound = WatchShapeService.isRound;
     return SizedBox(
       width: isRound ? 40 : 55,
       height: isRound ? 90 : 100,
@@ -166,11 +121,8 @@ class _TimePickerViewState extends State<TimePickerView> {
                 child: Text(
                   value.toString().padLeft(2, '0'),
                   style: TextStyle(
-                    fontSize: isSelected
-                        ? (isRound ? 25 : 30)
-                        : isRound
-                            ? 20
-                            : 20,
+                    fontSize:
+                        isSelected ? (isRound ? 25 : 30) : (isRound ? 20 : 20),
                     color: isSelected ? AppColors.green : AppColors.notSeleted,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
@@ -184,10 +136,13 @@ class _TimePickerViewState extends State<TimePickerView> {
     );
   }
 
-  Widget _buildFixedScroll(List<String> items, String selectedValue,
-      FixedExtentScrollController controller, Function(String) onChanged) {
-    final isRound = Get.find<DeviceController>().isRound.value;
-
+  Widget _buildFixedScroll(
+    List<String> items,
+    String selectedValue,
+    FixedExtentScrollController controller,
+    Function(String) onChanged,
+  ) {
+    final isRound = WatchShapeService.isRound;
     return SizedBox(
       width: isRound ? 40 : 55,
       height: isRound ? 90 : 100,
@@ -208,11 +163,8 @@ class _TimePickerViewState extends State<TimePickerView> {
                 child: Text(
                   item,
                   style: TextStyle(
-                    fontSize: isSelected
-                        ? (isRound ? 23 : 25)
-                        : isRound
-                            ? 20
-                            : 20,
+                    fontSize:
+                        isSelected ? (isRound ? 23 : 25) : (isRound ? 20 : 20),
                     color: isSelected ? AppColors.green : AppColors.notSeleted,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
@@ -227,16 +179,16 @@ class _TimePickerViewState extends State<TimePickerView> {
   }
 
   Widget _buildIconButton(
-      int index, IconData icon, VoidCallback onTap, bool isSelected) {
-    final isRound = Get.find<DeviceController>().isRound.value;
-
+    int index,
+    IconData icon,
+    VoidCallback onTap,
+    bool isSelected,
+  ) {
+    final isRound = WatchShapeService.isRound;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: GestureDetector(
-        onTap: () {
-          controller.setSelectedIcon(index);
-          onTap();
-        },
+        onTap: onTap,
         child: Container(
           padding: EdgeInsets.all(isRound ? 5 : 8),
           decoration: BoxDecoration(

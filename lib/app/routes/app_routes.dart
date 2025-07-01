@@ -1,5 +1,5 @@
 abstract class AppRoutes {
   static const home = '/';
-  static const timePicker = '/time_picker';
+  static const alarm_setup = '/alarm_setup';
   static const more_settings = '/more_settings';
 }

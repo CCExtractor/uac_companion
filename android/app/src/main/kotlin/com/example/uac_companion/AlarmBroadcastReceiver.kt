@@ -1,4 +1,4 @@
-package com.example.uac_companion
+package com.uac.wearcompanion
 
 import android.app.*
 import android.content.*
@@ -7,6 +7,7 @@ import android.media.*
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.uac.wearcompanion.AlarmDismissReceiver
 
 object AlarmServiceHolder {
     var ringtone: Ringtone? = null
@@ -96,6 +97,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         )
         
         val snoozeAction = NotificationCompat.Action.Builder(
+            //! look for the path
             android.R.drawable.ic_lock_idle_alarm, "Snooze", snoozePendingIntent
         ).build()
         

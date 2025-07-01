@@ -1,3 +1,3 @@
-package com.example.uac_companion
+package com.uac.wearcompanion
 
 const val NOTIFICATION_ID = 1001

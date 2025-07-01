@@ -1,4 +1,4 @@
-package com.example.uac_companion
+package com.uac.wearcompanion
 
 import android.app.*
 import android.content.*
@@ -14,13 +14,13 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.*
 
 class MainActivity : FlutterActivity() {
-
+//! uac alamchannel
     private val CHANNEL = "alarm_channel"
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
+//! permission_handler: ^12.0.0+1 use this
         checkAndRequestPermissions()
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
@@ -98,6 +98,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    //!needed in seperate file
     private fun scheduleAlarm(id: Int, hour: Int, minute: Int, days: String) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         Log.d("Kotlin-AlarmDebug", "Scheduling alarm: ID=$id, time=$hour:$minute, days=$days")
@@ -158,7 +159,7 @@ class MainActivity : FlutterActivity() {
 
     private fun createAlarmPendingIntent(context: Context, alarmId: Int, requestCode: Int): PendingIntent {
         val intent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
-            action = "com.example.uac_companion.ALARM_TRIGGERED_$alarmId"
+            action = "com.uac.wearcompanion.ALARM_TRIGGERED_$alarmId"
             putExtra("alarmId", alarmId)
         }
         return PendingIntent.getBroadcast(

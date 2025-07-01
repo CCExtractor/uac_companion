@@ -1,11 +1,11 @@
-package com.example.uac_companion
+package com.uac.wearcompanion
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import com.example.uac_companion.NOTIFICATION_ID
+import com.uac.wearcompanion.NOTIFICATION_ID
 
 class AlarmDismissReceiver : BroadcastReceiver() {
 

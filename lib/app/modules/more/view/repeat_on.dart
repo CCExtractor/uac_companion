@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:uac_companion/watch_shape.dart';
+import 'package:uac_companion/app/utils/watch_shape_service.dart';
 import '../../../utils/colors.dart';
 import '../controller/more_settings_controller.dart';
 
@@ -10,7 +10,8 @@ class RepeatSelectorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isRound = Get.find<DeviceController>().isRound.value;
+    // final isRound = Get.find<DeviceController>().isRound.value;
+    final isRound = WatchShapeService.isRound;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
@@ -52,7 +53,8 @@ void showRepeatOptions(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (_) {
-      final isRound = Get.find<DeviceController>().isRound.value;
+      // final isRound = Get.find<DeviceController>().isRound.value;
+      final isRound = WatchShapeService.isRound;
       return SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.only(top: isRound ? 1 : 8),
@@ -73,6 +75,7 @@ void showRepeatOptions(
                 onTap: () {
                   controller.selectedMode.value = 'weekdays';
                   controller.selectedDays.assignAll([0, 1, 2, 3, 4]);
+                  //getx 
                   Navigator.pop(context);
                 },
               ),

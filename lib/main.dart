@@ -3,10 +3,9 @@ import 'package:get/get.dart';
 import 'package:uac_companion/app/routes/app_routes.dart';
 import 'package:wear/wear.dart';
 import 'app/routes/app_pages.dart';
-import './watch_shape.dart';
+import 'app/utils/watch_shape_service.dart';
 
 void main() {
-  Get.put(DeviceController());
   runApp(const MyApp());
 }
 
@@ -17,10 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return WatchShape(
       builder: (context, shape, child) {
-        final bool isRound = shape == WearShape.round;
-
-        final deviceController = Get.find<DeviceController>();
-        deviceController.setShape(isRound);
+        WatchShapeService.isRound = shape == WearShape.round;
 
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
