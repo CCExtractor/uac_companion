@@ -1,4 +1,4 @@
-package com.uac.wearcompanion
+package com.ccextractor.uac_companion
 
 import android.app.*
 import android.content.*
@@ -12,25 +12,31 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.*
-import com.ccextractor.uac_companion.AlarmBroadcastReceiver
 
 class MainActivity : FlutterActivity() {
-//! uac alamchannel
-    private val CHANNEL = "alarm_channel"
+    private val CHANNEL = "uac_alarm_channel"
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-//! permission_handler: ^12.0.0+1 use this
+        // ! permission_handler: ^12.0.0+1 use this
         checkAndRequestPermissions()
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
+                call,
+                result ->
             when (call.method) {
                 "scheduleAlarm" -> {
                     val hour = call.argument<Int>("hour")
                     val minute = call.argument<Int>("minute")
                     val id = call.argument<Int>("alarmId")
-                    val days = call.argument<String>("days") ?: "Once"
+                    val daysArg = call.argument<Any>("days")
+                    val days =
+                            when (daysArg) {
+                                is String -> daysArg
+                                is List<*> -> daysArg.joinToString(",") { it.toString() }
+                                else -> "Once"
+                            }
 
                     if (id != null && hour != null && minute != null) {
                         scheduleAlarm(id, hour, minute, days)
@@ -56,13 +62,15 @@ class MainActivity : FlutterActivity() {
     // Permission handling
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(
+                            this,
+                            android.Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    NOTIFICATION_PERMISSION_REQUEST_CODE
+                        this,
+                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                        NOTIFICATION_PERMISSION_REQUEST_CODE
                 )
                 return
             }
@@ -70,15 +78,15 @@ class MainActivity : FlutterActivity() {
             requestExactAlarmPermissionIfNeeded()
         }
     }
-
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE &&
-            grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        grantResults.isNotEmpty() &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED
         ) {
             Log.d("Permission", "Notification permission granted")
             requestExactAlarmPermissionIfNeeded()
@@ -86,20 +94,20 @@ class MainActivity : FlutterActivity() {
             Log.e("Permission", "Notification permission denied")
         }
     }
-
     private fun requestExactAlarmPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
+                val intent =
+                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
                 startActivity(intent)
             }
         }
     }
 
-    //!needed in seperate file
+    // !needed in seperate file
     private fun scheduleAlarm(id: Int, hour: Int, minute: Int, days: String) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         Log.d("Kotlin-AlarmDebug", "Scheduling alarm: ID=$id, time=$hour:$minute, days=$days")
@@ -111,31 +119,36 @@ class MainActivity : FlutterActivity() {
 
         if (daysList.contains(-1)) {
             // One-time alarm
-            val calendar = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                if (before(now)) add(Calendar.DAY_OF_YEAR, 1)
-            }
+            val calendar =
+                    Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, hour)
+                        set(Calendar.MINUTE, minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                        if (before(now)) add(Calendar.DAY_OF_YEAR, 1)
+                    }
             val pi = createAlarmPendingIntent(this, id, id * 10)
             setExactAlarmCompat(alarmManager, calendar.timeInMillis, pi)
             Log.d("Kotlin-AlarmDebug", "→ One-time alarm set for ${calendar.time}")
         } else {
             // Repeating alarms
             for (dayOfWeek in daysList) {
-                val calendar = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, minute)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                    set(Calendar.DAY_OF_WEEK, dayOfWeek)
-                    if (before(now)) add(Calendar.WEEK_OF_YEAR, 1)
-                }
+                val calendar =
+                        Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, hour)
+                            set(Calendar.MINUTE, minute)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                            set(Calendar.DAY_OF_WEEK, dayOfWeek)
+                            if (before(now)) add(Calendar.WEEK_OF_YEAR, 1)
+                        }
                 val requestCode = generateRequestCode(id, dayOfWeek)
                 val pi = createAlarmPendingIntent(this, id, requestCode)
                 setExactAlarmCompat(alarmManager, calendar.timeInMillis, pi)
-                Log.d("Kotlin-AlarmDebug", "→ Repeating alarm set for day=$dayOfWeek at ${calendar.time}")
+                Log.d(
+                        "Kotlin-AlarmDebug",
+                        "→ Repeating alarm set for day=$dayOfWeek at ${calendar.time}"
+                )
             }
         }
     }
@@ -151,23 +164,29 @@ class MainActivity : FlutterActivity() {
     private fun cancelExistingAlarmsForId(alarmId: Int) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         for (dayOfWeek in 0..7) {
-            val reqCode = if (dayOfWeek == 0) alarmId * 10 else generateRequestCode(alarmId, dayOfWeek)
+            val reqCode =
+                    if (dayOfWeek == 0) alarmId * 10 else generateRequestCode(alarmId, dayOfWeek)
             val pi = createAlarmPendingIntent(this, alarmId, reqCode)
             alarmManager.cancel(pi)
             Log.d("Kotlin-AlarmDebug", "← Cancelled alarm: ID=$alarmId, reqCode=$reqCode")
         }
     }
 
-    private fun createAlarmPendingIntent(context: Context, alarmId: Int, requestCode: Int): PendingIntent {
-        val intent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
-            action = "com.uac.wearcompanion.ALARM_TRIGGERED_$alarmId"
-            putExtra("alarmId", alarmId)
-        }
+    private fun createAlarmPendingIntent(
+            context: Context,
+            alarmId: Int,
+            requestCode: Int
+    ): PendingIntent {
+        val intent =
+                Intent(context, AlarmBroadcastReceiver::class.java).apply {
+                    action = "com.uac.wearcompanion.ALARM_TRIGGERED_$alarmId"
+                    putExtra("alarmId", alarmId)
+                }
         return PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
@@ -184,18 +203,30 @@ class MainActivity : FlutterActivity() {
     private fun parseDays(days: String): List<Int> {
         return when (days) {
             "Once" -> listOf(-1)
-            "Weekdays" -> listOf(
-                Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY,
-                Calendar.THURSDAY, Calendar.FRIDAY
-            )
-            "Daily" -> listOf(
-                Calendar.SUNDAY, Calendar.MONDAY, Calendar.TUESDAY,
-                Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY,
-                Calendar.SATURDAY
-            )
-            else -> days.split(",")
-                .mapNotNull { it.trim().toIntOrNull()?.plus(1)?.takeIf { d -> d in 1..7 } }
-                .ifEmpty { listOf(-1) }
+            "Weekdays" ->
+                    listOf(
+                            Calendar.MONDAY,
+                            Calendar.TUESDAY,
+                            Calendar.WEDNESDAY,
+                            Calendar.THURSDAY,
+                            Calendar.FRIDAY
+                    )
+            "Daily" ->
+                    listOf(
+                            Calendar.SUNDAY,
+                            Calendar.MONDAY,
+                            Calendar.TUESDAY,
+                            Calendar.WEDNESDAY,
+                            Calendar.THURSDAY,
+                            Calendar.FRIDAY,
+                            Calendar.SATURDAY
+                    )
+            else ->
+                    days.split(",")
+                            .mapNotNull {
+                                it.trim().toIntOrNull()?.plus(1)?.takeIf { d -> d in 1..7 }
+                            }
+                            .ifEmpty { listOf(-1) }
         }
     }
 }
