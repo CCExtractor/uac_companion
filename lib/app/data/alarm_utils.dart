@@ -70,7 +70,7 @@ class AlarmDBService {
 
   Future<Alarm> insertAlarm(Alarm alarm) async {
     final map = alarm.toMap();
-    map.remove('id'); // Remove ID to let DB auto-generate it
+    map.remove('id');
     final id = await DBHelper.instance.insert(_table, map);
     return Alarm(
       id: id,
@@ -82,7 +82,7 @@ class AlarmDBService {
 
   Future<List<Alarm>> getAlarms() async {
     final result = await DBHelper.instance.getAll(_table);
-    debugPrint("DB getAlarms function: $result");
+    debugPrint("alarm_utils getAlarms: $result");
     return result.map((e) => alarmFromMap(e)).toList();
   }
 

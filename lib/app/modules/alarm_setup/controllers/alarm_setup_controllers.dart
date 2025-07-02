@@ -3,10 +3,12 @@ import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:uac_companion/app/data/alarm_model.dart';
 import 'package:uac_companion/app/data/alarm_utils.dart';
+import 'package:uac_companion/app/utils/days_utils.dart';
 import 'package:uac_companion/app/utils/time_utils.dart';
 
 class AlarmSetupControllers extends GetxController {
-  static const platform = MethodChannel('alarm_channel');
+  static const platform = MethodChannel('uac_alarm_channel');
+  static AlarmSetupControllers get to => Get.find();
 
   int? initialHour;
   int? initialMinute;
@@ -56,13 +58,17 @@ class AlarmSetupControllers extends GetxController {
   Future<void> confirmTime() async {
     final finalHour = to24Hour(selectedHour.value, selectedPeriod.value);
     final formattedTime = formatTime(finalHour, selectedMinute.value);
+    final androidDays = flutterToAndroidDays(selectedDays);
 
     final alarm = Alarm(
       id: alarmId,
       time: formattedTime,
-      days: selectedDays,
+      // days: selectedDays,
+      days: androidDays,
       enabled: true,
     );
+
+    debugPrint('flutter before updation/insertion: $alarm');
 
     final dbService = AlarmDBService();
     final finalAlarm = alarmId != null
@@ -73,7 +79,7 @@ class AlarmSetupControllers extends GetxController {
       'alarmId': finalAlarm.id,
       'hour': finalHour,
       'minute': selectedMinute.value,
-      'days': selectedDays.join(','),
+      'days': androidDays,
     });
 
     Get.back(result: true);

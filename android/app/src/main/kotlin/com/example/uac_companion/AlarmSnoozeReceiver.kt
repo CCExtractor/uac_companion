@@ -1,4 +1,4 @@
-package com.uac.wearcompanion
+package com.ccextractor.uac_companion
 
 import android.app.*
 import android.content.*
@@ -28,7 +28,7 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             putExtra("alarmId", alarmId)
             putExtra("hour", hour)
             putExtra("minute", minute)
-            action = "com.uac.wearcompanion.ALARM_TRIGGERED_$alarmId"
+            action = "com.ccextractor.uac_companion.ALARM_TRIGGERED_$alarmId"
         }
 
         val snoozePendingIntent = PendingIntent.getBroadcast(

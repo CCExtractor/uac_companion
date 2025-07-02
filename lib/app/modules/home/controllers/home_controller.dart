@@ -7,8 +7,9 @@ import '../../../utils/time_utils.dart';
 import '../../../utils/days_utils.dart';
 
 class HomeController extends GetxController {
+  static HomeController get to => Get.find();
   var alarms = <Alarm>[].obs;
-  static const platform = MethodChannel('alarm_channel');
+  static const platform = MethodChannel('uac_alarm_channel');
   final alarmService = AlarmDBService();
 
   @override
@@ -37,7 +38,7 @@ class HomeController extends GetxController {
     try {
       if (updatedAlarm.enabled) {
         final time = parseTime(updatedAlarm.time);
-        final androidDays = flutterDaysToAndroidDaysString(updatedAlarm.days);
+        final androidDays = flutterToAndroidDays(updatedAlarm.days);
         await platform.invokeMethod('scheduleAlarm', {
           'alarmId': updatedAlarm.id,
           'hour': time['hour'],

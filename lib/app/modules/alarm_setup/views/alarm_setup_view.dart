@@ -4,7 +4,6 @@ import 'package:uac_companion/app/routes/app_routes.dart';
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 import '../../../utils/colors.dart';
 import '../controllers/alarm_setup_controllers.dart';
-import '../../more/view/more_settings_view.dart';
 import '../../smart_control.dart';
 
 class AlarmSetupView extends StatelessWidget {
@@ -12,7 +11,7 @@ class AlarmSetupView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AlarmSetupControllers>();
+    // final controller = Get.find<AlarmSetupControllers>();
     final isRound = WatchShapeService.isRound;
 
     return Scaffold(
@@ -38,9 +37,9 @@ class AlarmSetupView extends StatelessWidget {
                           _buildInfiniteScroll(
                             1,
                             12,
-                            controller.selectedHour.value,
-                            controller.hourController,
-                            controller.setHour,
+                            AlarmSetupControllers.to.selectedHour.value,
+                            AlarmSetupControllers.to.hourController,
+                            AlarmSetupControllers.to.setHour,
                           ),
                           Text(
                             ':',
@@ -52,15 +51,15 @@ class AlarmSetupView extends StatelessWidget {
                           _buildInfiniteScroll(
                             0,
                             59,
-                            controller.selectedMinute.value,
-                            controller.minuteController,
-                            controller.setMinute,
+                            AlarmSetupControllers.to.selectedMinute.value,
+                            AlarmSetupControllers.to.minuteController,
+                            AlarmSetupControllers.to.setMinute,
                           ),
                           _buildFixedScroll(
                             ['AM', 'PM'],
-                            controller.selectedPeriod.value,
-                            controller.periodController,
-                            controller.setPeriod,
+                            AlarmSetupControllers.to.selectedPeriod.value,
+                            AlarmSetupControllers.to.periodController,
+                            AlarmSetupControllers.to.setPeriod,
                           ),
                         ],
                       ),
@@ -71,17 +70,17 @@ class AlarmSetupView extends StatelessWidget {
                       children: [
                         _buildIconButton(0, Icons.more_vert, () async {
                           final result =
-                              await Get.toNamed(AppRoutes.more_settings);
+                              await Get.toNamed(AppRoutes.moreSettings);
                           if (result is List<int>) {
-                            controller.selectedDays.value = result;
+                            AlarmSetupControllers.to.selectedDays.value = result;
                           }
-                        }, controller.selectedIconIndex.value == 0),
+                        }, AlarmSetupControllers.to.selectedIconIndex.value == 0),
                         _buildIconButton(1, Icons.check, () {
-                          controller.confirmTime();
-                        }, controller.selectedIconIndex.value == 1),
+                          AlarmSetupControllers.to.confirmTime();
+                        }, AlarmSetupControllers.to.selectedIconIndex.value == 1),
                         _buildIconButton(2, Icons.notifications_active, () {
                           Get.to(() => const SmartControlsScreen());
-                        }, controller.selectedIconIndex.value == 2),
+                        }, AlarmSetupControllers.to.selectedIconIndex.value == 2),
                       ],
                     )),
               ],

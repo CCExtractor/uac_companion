@@ -1,7 +1,7 @@
 class Alarm {
   final int? id;
-  final String time; // Format: "HH:mm"
-  final List<int> days; // 0 = Mon, ..., 6 = Sun
+  final String time; //* Format: HH:mm (24-hour format)
+  final List<int> days; //* Stores in android format (1 = Mon, ..., 7 = Sun)
   final bool enabled;
 
   Alarm({
@@ -14,7 +14,7 @@ class Alarm {
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
         'time': time,
-        'days': days.join(','), // Save as comma-separated string
+        'days': days.join(','),
         'enabled': enabled ? 1 : 0,
       };
 

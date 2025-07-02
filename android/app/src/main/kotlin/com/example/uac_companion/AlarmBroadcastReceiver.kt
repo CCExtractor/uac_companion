@@ -1,4 +1,4 @@
-package com.uac.wearcompanion
+package com.ccextractor.uac_companion
 
 import android.app.*
 import android.content.*
@@ -7,7 +7,7 @@ import android.media.*
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.uac.wearcompanion.AlarmDismissReceiver
+import com.ccextractor.uac_companion.AlarmDismissReceiver
 
 object AlarmServiceHolder {
     var ringtone: Ringtone? = null
@@ -17,7 +17,7 @@ object AlarmServiceHolder {
 class AlarmBroadcastReceiver : BroadcastReceiver() {
 
     companion object {
-        private const val CHANNEL_ID = "alarm_channel_id"
+        private const val CHANNEL_ID = "uac_alarm_channel_id"
         private const val NOTIFICATION_ID = 1001
         private var channelCreated = false
     }

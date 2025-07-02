@@ -12,7 +12,7 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final HomeController controller = Get.find();
+    // final HomeController controller = Get.find();
     final isRound = WatchShapeService.isRound;
 
     return Scaffold(
@@ -43,7 +43,7 @@ class HomeView extends StatelessWidget {
                   onPressed: () async {
                     debugPrint('Add Alarm button pressed');
                     final result = await Get.toNamed('/alarm_setup');
-                    if (result == true) controller.loadAlarms();
+                    if (result == true) HomeController.to.loadAlarms();
                   },
                   padding: EdgeInsets.all(isRound ? 10 : 12),
                   constraints: BoxConstraints(
@@ -55,7 +55,7 @@ class HomeView extends StatelessWidget {
 
               //* Alarm List
               Obx(() {
-                final alarms = controller.alarms;
+                final alarms = HomeController.to.alarms;
                 if (alarms.isEmpty) {
                   return Center(
                     child: Text(
@@ -69,6 +69,7 @@ class HomeView extends StatelessWidget {
                 }
                 return Column(
                   children: alarms.map<Widget>((Alarm alarm) {
+                    final flutterDays = androidToFlutterDays(alarm.days);
                     return GestureDetector(
                       onTap: () async {
                         debugPrint('Alarm tapped: ${alarm.time}');
@@ -79,10 +80,10 @@ class HomeView extends StatelessWidget {
                           'alarmId': alarm.id,
                           'existingDays': alarm.days,
                         });
-                        if (result == true) controller.loadAlarms();
+                        if (result == true) HomeController.to.loadAlarms();
                       },
                       onLongPress: () =>
-                          showDeleteDialog(context, alarm, controller),
+                          showDeleteDialog(context, alarm, HomeController.to),
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 3),
                         padding: EdgeInsets.only(
@@ -94,6 +95,7 @@ class HomeView extends StatelessWidget {
                           color: AppColors.grayBlack,
                           borderRadius: BorderRadius.circular(20),
                         ),
+                        
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -101,7 +103,8 @@ class HomeView extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  daysListToString(alarm.days),
+                                  // Display the days in a readable format
+                                  flutterDaysListToString(flutterDays),
                                   style: TextStyle(
                                     color: AppColors.green,
                                     fontSize: isRound ? 8 : 10,
@@ -120,8 +123,8 @@ class HomeView extends StatelessWidget {
                               scale: isRound ? 0.7 : 0.8,
                               child: Switch(
                                 value: alarm.enabled,
-                                onChanged: (_) => controller.toggleAlarm(
-                                    controller.alarms.indexOf(alarm)),
+                                onChanged: (_) => HomeController.to.toggleAlarm(
+                                    HomeController.to.alarms.indexOf(alarm)),
                                 activeColor: AppColors.green,
                                 inactiveThumbColor: Colors.grey,
                                 inactiveTrackColor: Colors.black26,

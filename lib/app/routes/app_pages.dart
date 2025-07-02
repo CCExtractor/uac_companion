@@ -16,13 +16,13 @@ class AppPages {
 ),
 
     GetPage(
-      name: AppRoutes.alarm_setup,
+      name: AppRoutes.alarmSetup,
       page: () => const AlarmSetupView(),
       binding: AlarmSetupBinding(),
     ),
 
     GetPage(
-      name: AppRoutes.more_settings,
+      name: AppRoutes.moreSettings,
       page: () => const MoreSettingsView(),
       binding: MoreSettingsBinding(),
     ),
