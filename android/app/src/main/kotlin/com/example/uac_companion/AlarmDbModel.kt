@@ -11,7 +11,7 @@ data class Alarm(
     val enabled: Boolean
 )
 
-class AlarmDbHelper(context: Context) : SQLiteOpenHelper(
+class AlarmDbModel(context: Context) : SQLiteOpenHelper(
     context,
     context.getDatabasePath("wear_alarms.db").absolutePath,
     null,

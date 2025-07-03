@@ -2,12 +2,11 @@ package com.ccextractor.uac_companion
 
 import android.app.*
 import android.content.*
-import android.icu.util.Calendar
 import android.media.*
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.ccextractor.uac_companion.AlarmDismissReceiver
+import com.ccextractor.uac_companion.data.AlarmDbModel
 
 object AlarmServiceHolder {
     var ringtone: Ringtone? = null
@@ -19,32 +18,38 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
     companion object {
         private const val CHANNEL_ID = "uac_alarm_channel_id"
         private const val NOTIFICATION_ID = 1001
-        private var channelCreated = false
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AlarmReceiver", "Alarm triggered!")
+        Log.d("AlarmBroadcastReceiver", "Alarm triggered!")
+
         val alarmId = intent.getIntExtra("alarmId", -1)
         val hour = intent.getIntExtra("hour", 0)
         val minute = intent.getIntExtra("minute", 0)
-        Log.d("AlarmBroadcastReceiver", "Showing notification for alarmId: $alarmId")
+
+        // Disable one-time alarm directly
+        if (intent.getStringExtra("days").isNullOrEmpty()) {
+            val db = AlarmDbModel(context).writableDatabase
+            db.execSQL("UPDATE alarms SET enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
+            db.close()
+            Log.d("AlarmBroadcastReceiver", "Disabled one-time alarm ID=$alarmId")
+        }
 
         val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Create notification channel if not created
-        if (!channelCreated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Alarm Channel",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Channel for alarm notifications"
-                enableVibration(true)
-                vibrationPattern = longArrayOf(0, 1000, 500, 1000)
-            }
+        // Create notification channel (safe to call multiple times)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel =
+                    NotificationChannel(
+                            CHANNEL_ID,
+                            "Alarm Channel",
+                            NotificationManager.IMPORTANCE_HIGH
+                    )
+            channel.description = "Channel for alarm notifications"
+            channel.enableVibration(true)
+            channel.vibrationPattern = longArrayOf(0, 1000, 500, 1000)
             notificationManager.createNotificationChannel(channel)
-            channelCreated = true
         }
 
         // Play ringtone
@@ -56,88 +61,73 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
             if (!it.isPlaying) {
                 try {
                     it.play()
-                    Log.d("AlarmReceiver", "Ringtone started")
                 } catch (e: Exception) {
-                    Log.e("AlarmReceiver", "Error playing ringtone", e)
+                    Log.e("AlarmBroadcastReceiver", "Error playing ringtone", e)
                 }
             }
         }
 
         // Vibrate
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        val vibrationPattern = longArrayOf(0, 1000, 500, 1000)
+        val pattern = longArrayOf(0, 1000, 500, 1000)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(vibrationPattern, 0))
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
         } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(vibrationPattern, 0)
+            @Suppress("DEPRECATION") vibrator.vibrate(pattern, 0)
         }
         AlarmServiceHolder.vibrator = vibrator
 
-        // Dismiss and snooze actions
-        val dismissIntent = Intent(context, AlarmDismissReceiver::class.java).apply {
-            action = "com.yourpackage.ALARM_DISMISS_$alarmId"
-            putExtra("alarmId", alarmId)
-        }
-        val dismissPendingIntent = PendingIntent.getBroadcast(
-            context, alarmId, dismissIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        // Dismiss Intent
+        val dismissIntent =
+                Intent(context, AlarmDismissReceiver::class.java).apply {
+                    action = "com.ccextractor.uac_companion.ALARM_DISMISS_$alarmId"
+                    putExtra("alarmId", alarmId)
+                }
+        val dismissPendingIntent =
+                PendingIntent.getBroadcast(
+                        context,
+                        alarmId,
+                        dismissIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
 
-        val snoozeIntent = Intent(context, AlarmSnoozeReceiver::class.java).apply {
-            putExtra("alarmId", alarmId)
-            putExtra("hour", hour)
-            putExtra("minute", minute)
-        }
-        val snoozePendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarmId,
-            snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        
-        val snoozeAction = NotificationCompat.Action.Builder(
-            //! look for the path
-            android.R.drawable.ic_lock_idle_alarm, "Snooze", snoozePendingIntent
-        ).build()
-        
+        // Snooze Intent
+        val snoozeIntent =
+                Intent(context, AlarmSnoozeReceiver::class.java).apply {
+                    putExtra("alarmId", alarmId)
+                    putExtra("hour", hour)
+                    putExtra("minute", minute)
+                }
+        val snoozePendingIntent =
+                PendingIntent.getBroadcast(
+                        context,
+                        alarmId,
+                        snoozeIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
 
         // Notification
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Alarm Alert")
-            .setContentText("Alarm is ringing")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setOngoing(true)
-            .addAction(android.R.drawable.ic_media_pause, "Dismiss", dismissPendingIntent)
-            .addAction(android.R.drawable.ic_media_play, "Snooze", snoozePendingIntent)
-            .setFullScreenIntent(dismissPendingIntent, true)
-            .build()
+        val notification =
+                NotificationCompat.Builder(context, CHANNEL_ID)
+                        .setContentTitle("Alarm Alert")
+                        .setContentText("Alarm is ringing")
+                        .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setCategory(NotificationCompat.CATEGORY_ALARM)
+                        .setOngoing(true)
+                        .addAction(
+                                android.R.drawable.ic_media_pause,
+                                "Dismiss",
+                                dismissPendingIntent
+                        )
+                        .addAction(android.R.drawable.ic_media_play, "Snooze", snoozePendingIntent)
+                        .setFullScreenIntent(dismissPendingIntent, true)
+                        .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
 
-        // Reschedule repeating alarm for next week
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.WEEK_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            set(Calendar.DAY_OF_WEEK, Calendar.getInstance().get(Calendar.DAY_OF_WEEK))
-        }
-
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pendingIntent = PendingIntent.getBroadcast(
-            context, alarmId, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
-
-        Log.d("AlarmReceiver", "Rescheduled repeating alarm for next week: ${calendar.time}")
+        // Schedule next upcoming alarm
+        AlarmScheduler.scheduleNextAlarm(context)
+        Log.d("AlarmBroadcastReceiver", "Scheduled next upcoming alarm after trigger")
     }
 }

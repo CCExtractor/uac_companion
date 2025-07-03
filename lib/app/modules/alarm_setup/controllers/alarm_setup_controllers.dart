@@ -10,20 +10,19 @@ class AlarmSetupControllers extends GetxController {
   static const platform = MethodChannel('uac_alarm_channel');
   static AlarmSetupControllers get to => Get.find();
 
-  int? initialHour;
-  int? initialMinute;
-  int? alarmId;
-
-  final selectedHour = 7.obs;
-  final selectedMinute = 30.obs;
-  final selectedPeriod = 'AM'.obs;
-  final selectedIconIndex = 1.obs;
-
+  final RxInt selectedHour = 7.obs;
+  final RxInt selectedMinute = 30.obs;
+  final RxString selectedPeriod = 'AM'.obs;
+  final RxInt selectedIconIndex = 1.obs;
   final RxList<int> selectedDays = <int>[].obs;
 
   late FixedExtentScrollController hourController;
   late FixedExtentScrollController minuteController;
   late FixedExtentScrollController periodController;
+
+  int? initialHour;
+  int? initialMinute;
+  int? alarmId;
 
   @override
   void onInit() {
@@ -35,7 +34,7 @@ class AlarmSetupControllers extends GetxController {
     alarmId = args['alarmId'];
 
     final existingDays = args['existingDays'];
-    if (existingDays != null && existingDays is List<int>) {
+    if (existingDays is List<int>) {
       selectedDays.assignAll(existingDays);
     }
 
@@ -56,32 +55,26 @@ class AlarmSetupControllers extends GetxController {
   }
 
   Future<void> confirmTime() async {
-    final finalHour = to24Hour(selectedHour.value, selectedPeriod.value);
-    final formattedTime = formatTime(finalHour, selectedMinute.value);
+    final hour24 = to24Hour(selectedHour.value, selectedPeriod.value);
+    final formattedTime = formatTime(hour24, selectedMinute.value);
     final androidDays = flutterToAndroidDays(selectedDays);
 
     final alarm = Alarm(
       id: alarmId,
       time: formattedTime,
-      // days: selectedDays,
       days: androidDays,
       enabled: true,
     );
 
-    debugPrint('flutter before updation/insertion: $alarm');
+    debugPrint('flutter before insert/update: $alarm');
 
     final dbService = AlarmDBService();
-    final finalAlarm = alarmId != null
-        ? await dbService.updateAlarm(alarm).then((_) => alarm)
+    final finalAlarmId = alarmId != null
+        ? await dbService.updateAlarm(alarm).then((_) => alarm.id!)
         : await dbService.insertAlarm(alarm);
 
-    await platform.invokeMethod('scheduleAlarm', {
-      'alarmId': finalAlarm.id,
-      'hour': finalHour,
-      'minute': selectedMinute.value,
-      'days': androidDays,
-    });
-
+    debugPrint("alarmID -> $finalAlarmId");
+    await platform.invokeMethod('scheduleAlarm');
     Get.back(result: true);
   }
 

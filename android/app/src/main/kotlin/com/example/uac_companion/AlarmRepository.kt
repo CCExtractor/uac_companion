@@ -3,9 +3,9 @@ package com.ccextractor.uac_companion.data
 import android.content.Context
 import android.util.Log
 
-object AlarmRepository {
+object AlarmDbHelper {
     fun getAllAlarms(context: Context): List<Alarm> {
-        val dbHelper = AlarmDbHelper(context)
+        val dbHelper = AlarmDbModel(context)
         val db = dbHelper.readableDatabase
         val cursor = db.query("alarms", null, null, null, null, null, null)
 
@@ -29,7 +29,7 @@ object AlarmRepository {
         cursor.close()
         db.close()
 
-        Log.d("AlarmRepository", "Fetched alarms: $alarms")
+        Log.d("AlarmDbHelper", "Fetched alarms: $alarms")
         return alarms
     }
 }
