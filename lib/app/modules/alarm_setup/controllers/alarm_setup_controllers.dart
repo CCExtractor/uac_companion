@@ -34,8 +34,11 @@ class AlarmSetupControllers extends GetxController {
     alarmId = args['alarmId'];
 
     final existingDays = args['existingDays'];
+    // if (existingDays is List<int>) {
+    //   selectedDays.assignAll(existingDays);
+    // }
     if (existingDays is List<int>) {
-      selectedDays.assignAll(existingDays);
+      selectedDays.assignAll(androidToFlutterDays(existingDays));
     }
 
     final hour24 = initialHour ?? DateTime.now().hour;

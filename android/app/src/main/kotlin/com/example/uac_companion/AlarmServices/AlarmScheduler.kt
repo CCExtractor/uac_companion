@@ -59,6 +59,7 @@ object AlarmScheduler {
 
         cursor.close()
         db.close()
+        Log.d("AlarmScheduler", "Fetched alarms from DB: $alarms")
         return alarms
     }
 

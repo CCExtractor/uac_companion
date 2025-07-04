@@ -28,8 +28,6 @@ object AlarmDbHelper {
 
         cursor.close()
         db.close()
-
-        Log.d("AlarmDbHelper", "Fetched alarms: $alarms")
         return alarms
     }
 }
