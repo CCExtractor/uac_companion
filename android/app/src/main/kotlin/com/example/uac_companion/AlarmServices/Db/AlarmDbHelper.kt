@@ -3,7 +3,7 @@ package com.ccextractor.uac_companion.data
 import android.content.Context
 import android.util.Log
 
-object AlarmDbHelper {
+class AlarmDbHelper {
     fun getAllAlarms(context: Context): List<Alarm> {
         val dbHelper = AlarmDbModel(context)
         val db = dbHelper.readableDatabase

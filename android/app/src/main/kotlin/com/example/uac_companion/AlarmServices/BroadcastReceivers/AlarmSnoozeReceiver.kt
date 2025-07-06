@@ -6,13 +6,13 @@ import android.os.Build
 import android.util.Log
 
 class AlarmSnoozeReceiver : BroadcastReceiver() {
-
+//!need fixes alarm snoozes but with warning - W/Ringtone: Neither local nor remote playback available
     override fun onReceive(context: Context, intent: Intent) {
         val alarmId = intent.getIntExtra("alarmId", -1)
         val hour = intent.getIntExtra("hour", -1)
         val minute = intent.getIntExtra("minute", -1)
 
-        Log.d("AlarmSnoozeReceiver", "Snoozing alarmId=$alarmId for +1 minute...")
+        Log.d("UAC_Comp-AlarmSnoozeReceiver", "Snoozing alarmId=$alarmId for +1 minute...")
 
         // Stop current sound/vibration/notification
         AlarmServiceHolder.ringtone?.stop()
@@ -28,9 +28,10 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             putExtra("alarmId", alarmId)
             putExtra("hour", hour)
             putExtra("minute", minute)
+            putExtra("isSnoozed", true)
             action = "com.ccextractor.uac_companion.ALARM_TRIGGERED_$alarmId"
         }
-
+        
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,
             alarmId, // Same ID, reused for snooze
@@ -44,6 +45,6 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, snoozePendingIntent)
         }
 
-        Log.d("AlarmSnoozeReceiver", "→ Snoozed alarmId=$alarmId to $triggerAtMillis")
+        Log.d("UAC_Comp-AlarmSnoozeReceiver", "→ Snoozed alarmId=$alarmId to $triggerAtMillis")
     }
 }

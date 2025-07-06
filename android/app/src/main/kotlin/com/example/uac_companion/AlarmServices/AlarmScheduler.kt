@@ -12,82 +12,52 @@ import java.util.*
 import com.ccextractor.uac_companion.AlarmUtils.getNextValidTime
 
 object AlarmScheduler {
+    //* Call this to schedule the next alarm based on the current alarms form DB
     fun scheduleNextAlarm(context: Context) {
-        val alarms = getAllAlarmsFromDb(context).filter { it.enabled }
-        val upcoming = getNextAlarmInstance(alarms)
-
-        if (upcoming != null) {
-            scheduleAlarm(context, upcoming)
+        val alarms = AlarmUtils.getAllAlarmsFromDb(context).filter { it.enabled }
+        val upcomingAlarm = AlarmUtils.getNextUpcomingAlarm(alarms)
+    
+        if (upcomingAlarm != null) {
+            scheduleAlarm(context, upcomingAlarm)
         } else {
-            Log.d("AlarmScheduler", "No upcoming alarms to schedule.")
+            Log.d("UAC_Comp-AlarmScheduler", "No upcoming alarms to schedule.")
         }
     }
 
+    //* Actually schedules alarms based on the next valid time
     private fun scheduleAlarm(context: Context, alarm: Alarm) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val calendar = getNextValidTime(alarm) ?: return
-
+    
         val requestCode = alarm.id * 10
-        val pi = createAlarmPendingIntent(context, alarm.id, requestCode)
-
-        cancelExistingAlarmsForId(context, alarm.id) // Ensure no duplicates
-        setExactAlarmCompat(alarmManager, calendar.timeInMillis, pi)
-
-        Log.d("AlarmScheduler", "Scheduled alarm ID=${alarm.id} for ${calendar.time}")
+    
+        cancelExistingAlarmsFromId(context, alarm)
+    
+        val pendingIntent = createAlarmPendingIntent(context, alarm.id, requestCode, alarm)
+        setExactAlarmFun(alarmManager, calendar.timeInMillis, pendingIntent)
+    
+        Log.d("UAC_Comp-AlarmScheduler", "Scheduled alarm ID=${alarm.id} for ${calendar.time}")
     }
-
-    fun cancelAlarm(context: Context, id: Int) {
-        Log.d("AlarmScheduler", "Cancel requested for ID=$id")
-        cancelExistingAlarmsForId(context, id)
-    }
-
-    private fun getAllAlarmsFromDb(context: Context): List<Alarm> {
-        val db = AlarmDbModel(context).readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM alarms", null)
-        val alarms = mutableListOf<Alarm>()
-
-        while (cursor.moveToNext()) {
-            val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
-            val time = cursor.getString(cursor.getColumnIndexOrThrow("time"))
-            val daysRaw = cursor.getString(cursor.getColumnIndexOrThrow("days"))
-            val enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled")) == 1
-
-            val days = daysRaw.split(",").mapNotNull { it.trim().toIntOrNull() }
-
-            alarms.add(Alarm(id, time, days, enabled))
-        }
-
-        cursor.close()
-        db.close()
-        Log.d("AlarmScheduler", "Fetched alarms from DB: $alarms")
-        return alarms
-    }
-
-    private fun getNextAlarmInstance(alarms: List<Alarm>): Alarm? {
-        val now = Calendar.getInstance()
-        return alarms
-            .mapNotNull { alarm ->
-                val nextTime = getNextValidTime(alarm)
-                if (nextTime != null) Pair(alarm, nextTime.timeInMillis) else null
-            }
-            .minByOrNull { it.second }
-            ?.first
-    }
-
-
-    private fun cancelExistingAlarmsForId(context: Context, alarmId: Int) {
+    
+    private fun cancelExistingAlarmsFromId(context: Context, alarm: Alarm) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         for (i in 0..7) {
-            val reqCode = alarmId * 10 + i
-            val pi = createAlarmPendingIntent(context, alarmId, reqCode)
-            alarmManager.cancel(pi)
+            val reqCode = alarm.id * 10 + i
+            val pendingIntent = createAlarmPendingIntent(context, alarm.id, reqCode, alarm)
+            alarmManager.cancel(pendingIntent)
         }
     }
-
-    private fun createAlarmPendingIntent(context: Context, alarmId: Int, requestCode: Int): PendingIntent {
+    
+    private fun createAlarmPendingIntent(
+        context: Context,
+        alarmId: Int,
+        requestCode: Int,
+        alarm: Alarm
+    ): PendingIntent {
         val intent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
             action = "com.uac.wearcompanion.ALARM_TRIGGERED_$alarmId"
             putExtra("alarmId", alarmId)
+            putExtra("days", alarm.days.joinToString(","))
         }
         return PendingIntent.getBroadcast(
             context,
@@ -95,13 +65,26 @@ object AlarmScheduler {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+    }    
+
+    fun cancelAlarm(context: Context, id: Int) {
+        Log.d("UAC_Comp-AlarmScheduler", "Cancel requested for ID=$id")
+        // val alarm = getAllAlarmsFromDb(context).find { it.id == id }
+        val allAlarms = AlarmUtils.getAllAlarmsFromDb(context).filter { it.enabled }
+        val alarm = allAlarms.find { it.id == id }
+        if (alarm != null) {
+            cancelExistingAlarmsFromId(context, alarm)
+        } else {
+            Log.e("UAC_Comp-AlarmScheduler", "No alarm found with ID=$id to cancel")
+        }
     }
 
-    private fun setExactAlarmCompat(alarmManager: AlarmManager, time: Long, pi: PendingIntent) {
+    //! need to check this setExact might cause the UAC error in some devices
+    private fun setExactAlarmFun(alarmManager: AlarmManager, time: Long, pendingIntent: PendingIntent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pi)
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent)
         } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, time, pi)
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, time, pendingIntent)
         }
     }
 }

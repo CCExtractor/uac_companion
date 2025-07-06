@@ -1,29 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'alarm_model.dart';
 
-Alarm alarmFromMap(Map<String, dynamic> map) {
-  final rawDays = map['days'];
-  List<int> parsedDays = [];
-
-  if (rawDays is String && rawDays.isNotEmpty) {
-    parsedDays = rawDays
-        .split(',')
-        .map((s) => int.tryParse(s.trim()))
-        .where((e) => e != null)
-        .map((e) => e!)
-        .toList();
-  }
-
-  return Alarm(
-    id: map['id'],
-    time: map['time'],
-    days: parsedDays,
-    enabled: map['enabled'] == 1,
-  );
-}
-
+// Database helper class for managing SQLite operations
 class DBHelper {
   static final DBHelper instance = DBHelper._init();
   static Database? _database;
@@ -65,15 +46,24 @@ class DBHelper {
   }
 }
 
+// Alarm Services or Funcitons
 class AlarmDBService {
   static const String _table = 'alarms';
-
-  Future<Alarm> insertAlarm(Alarm alarm) async {
+  Future<Alarm> insertNewAlarm(Alarm alarm) async {
     final map = alarm.toMap();
     map.remove('id');
-    final id = await DBHelper.instance.insert(_table, map);
+    final rawId = await DBHelper.instance.insert(_table, map);
+
+    //** Need offset in order to avoid conflict while syncing with UAC
+    var offsetId = rawId;
+    if(rawId == 1) {
+      offsetId = rawId + 10000;
+    }
+    
+    await DBHelper.instance.update(_table, {'id': offsetId}, rawId);
+
     return Alarm(
-      id: id,
+      id: offsetId,
       time: alarm.time,
       days: alarm.days,
       enabled: alarm.enabled,

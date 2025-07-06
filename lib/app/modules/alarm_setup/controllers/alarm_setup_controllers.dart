@@ -33,28 +33,23 @@ class AlarmSetupControllers extends GetxController {
     initialMinute = args['initialMinute'];
     alarmId = args['alarmId'];
 
+    //* Much needed in order to avoid days issues on updating an alarm
     final existingDays = args['existingDays'];
-    // if (existingDays is List<int>) {
-    //   selectedDays.assignAll(existingDays);
-    // }
     if (existingDays is List<int>) {
       selectedDays.assignAll(androidToFlutterDays(existingDays));
     }
 
     final hour24 = initialHour ?? DateTime.now().hour;
     final minute = initialMinute ?? DateTime.now().minute;
-    final timeMap = from24Hour(hour24);
+    final timeMap = to12Hour(hour24);
 
     selectedHour.value = timeMap['hour'];
     selectedPeriod.value = timeMap['period'];
     selectedMinute.value = minute;
 
-    hourController =
-        FixedExtentScrollController(initialItem: selectedHour.value - 1);
-    minuteController =
-        FixedExtentScrollController(initialItem: selectedMinute.value);
-    periodController = FixedExtentScrollController(
-        initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
+    hourController = FixedExtentScrollController(initialItem: selectedHour.value - 1);
+    minuteController = FixedExtentScrollController(initialItem: selectedMinute.value);
+    periodController = FixedExtentScrollController(initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
   }
 
   Future<void> confirmTime() async {
@@ -74,7 +69,7 @@ class AlarmSetupControllers extends GetxController {
     final dbService = AlarmDBService();
     final finalAlarmId = alarmId != null
         ? await dbService.updateAlarm(alarm).then((_) => alarm.id!)
-        : await dbService.insertAlarm(alarm);
+        : await dbService.insertNewAlarm(alarm);
 
     debugPrint("alarmID -> $finalAlarmId");
     await platform.invokeMethod('scheduleAlarm');

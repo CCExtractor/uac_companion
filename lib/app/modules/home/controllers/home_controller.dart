@@ -18,6 +18,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     loadAlarms();
   }
 
+  //* Needed for the WidgetsBindingObserver to listen to app lifecycle changes
+  // Used to refresh the alarm list after the alarm notification is triggered
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -36,39 +38,31 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     alarms.assignAll(loadedAlarms);
   }
 
-  Future<void> toggleAlarm(int index) async {
-    final alarm = alarms[index];
-    final updatedAlarm = Alarm(
-      id: alarm.id,
-      time: alarm.time,
-      days: alarm.days,
-      enabled: !alarm.enabled,
-    );
+  Future<void> toggleAlarm(int id) async {
+    final updatedAlarms = alarms.map((alarm) {
+      if (alarm.id == id) {
+        final updated = Alarm(
+          id: alarm.id,
+          time: alarm.time,
+          days: alarm.days,
+          enabled: !alarm.enabled,
+        );
+        return updated;
+      }
+      return alarm;
+    }).toList();
 
-    alarms[index] = updatedAlarm;
+    final updatedAlarm = updatedAlarms.firstWhere((a) => a.id == id);
+    alarms.assignAll(updatedAlarms);
     await alarmService.updateAlarm(updatedAlarm);
 
     try {
       await platform.invokeMethod('scheduleAlarm');
       await loadAlarms();
     } catch (e) {
-      debugPrint('Error toggling alarm: $e');
+      debugPrint('HomeController -> Error toggling alarm: $e');
     }
   }
-
-//! Currently used in the home_view.dart but doubtfull.....
-  // Future<void> navigateToTimePicker(BuildContext context, {Alarm? alarm}) async {
-  //   final result = await Get.toNamed('/time_picker', arguments: {
-  //     'initialHour': alarm != null ? parseTime(alarm.time)['hour'] : null,
-  //     'initialMinute': alarm != null ? parseTime(alarm.time)['minute'] : null,
-  //     'alarmId': alarm?.id,
-  //     'existingDays': alarm?.days,
-  //   });
-
-  //   if (result == true) {
-  //     await loadAlarms();
-  //   }
-  // }
 
   Future<void> deleteAlarm(Alarm alarm) async {
     if (alarm.id == null) return;
@@ -80,7 +74,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       await platform.invokeMethod('scheduleAlarm');
       await loadAlarms();
     } catch (e) {
-      debugPrint('Alarm delete/schedule failed: $e');
+      debugPrint('HomeControlelr -> Alarm delete/schedule failed: $e');
     }
   }
 }

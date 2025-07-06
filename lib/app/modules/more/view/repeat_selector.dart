@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uac_companion/app/modules/more/controller/daysListMatcher.dart';
 import 'package:uac_companion/app/utils/colors.dart';
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 import '../controller/more_settings_controller.dart';
@@ -72,19 +73,46 @@ void showRepeatOptions(BuildContext context) {
 }
 
 Widget _option(String label, VoidCallback onTap) {
+  final controller = MoreSettingsController.to;
   final isRound = WatchShapeService.isRound;
+
+  // Define preset selections
+  final presetDays = {
+    "Weekdays": [0, 1, 2, 3, 4],
+    "Daily": [0, 1, 2, 3, 4, 5, 6],
+  };
+
+  final currentDays = controller.selectedDays;
+  final matchDays = presetDays[label];
+
+  bool isSelected;
+
+  if (label == "Custom") {
+    // Custom = Not Weekdays, Not Daily
+    final isWeekdays = DaysListMatcher.matches(currentDays, presetDays["Weekdays"]!);
+    final isDaily = DaysListMatcher.matches(currentDays, presetDays["Daily"]!);
+    isSelected = !isWeekdays && !isDaily;
+  } else {
+    isSelected = matchDays != null &&
+        currentDays.length == matchDays.length &&
+        currentDays.every((d) => matchDays.contains(d));
+  }
+
   return ListTile(
     dense: true,
     title: Center(
       child: Text(
         label,
-        style:
-            TextStyle(fontSize: isRound ? 14 : 16, color: AppColors.notSeleted),
+        style: TextStyle(
+          fontSize: isRound ? 14 : 16,
+          color: isSelected ? AppColors.green : AppColors.notSeleted,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
       ),
     ),
     onTap: () {
       onTap();
-      Get.back(); // Close the bottom sheet
+      Get.back();
     },
   );
 }

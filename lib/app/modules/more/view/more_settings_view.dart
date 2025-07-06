@@ -12,6 +12,11 @@ class MoreSettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isRound = WatchShapeService.isRound;
 
+    // Get actual alarm days from Get.arguments
+    final days = Get.arguments as List<int>? ?? [];
+    // Initialize controller with actual days
+    MoreSettingsController.to.init(days);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Padding(
@@ -43,15 +48,14 @@ class MoreSettingsView extends StatelessWidget {
                   color: AppColors.green,
                   size: 16,
                 ),
-                // onTap: () => showRepeatOptions(context),
                 onTap: () => showRepeatOptions(context),
-                // onTap: () => RepeatSelectorTile(),
               ),
             ),
             const Spacer(),
             Center(
               child: GestureDetector(
-                onTap: () => Get.back(result: MoreSettingsController.to.selectedDays),
+                onTap: () =>
+                    Get.back(result: MoreSettingsController.to.selectedDays),
                 child: Container(
                   padding: EdgeInsets.all(isRound ? 5 : 8),
                   decoration: BoxDecoration(

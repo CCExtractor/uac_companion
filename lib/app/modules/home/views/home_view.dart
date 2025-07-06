@@ -12,9 +12,7 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final HomeController controller = Get.find();
     final isRound = WatchShapeService.isRound;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
@@ -41,7 +39,6 @@ class HomeView extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.add, color: AppColors.green, size: 28),
                   onPressed: () async {
-                    debugPrint('Add Alarm button pressed');
                     final result = await Get.toNamed('/alarm_setup');
                     if (result == true) HomeController.to.loadAlarms();
                   },
@@ -123,8 +120,7 @@ class HomeView extends StatelessWidget {
                               scale: isRound ? 0.7 : 0.8,
                               child: Switch(
                                 value: alarm.enabled,
-                                onChanged: (_) => HomeController.to.toggleAlarm(
-                                    HomeController.to.alarms.indexOf(alarm)),
+                                onChanged: (_) => HomeController.to.toggleAlarm(alarm.id!),
                                 activeColor: AppColors.green,
                                 inactiveThumbColor: Colors.grey,
                                 inactiveTrackColor: Colors.black26,

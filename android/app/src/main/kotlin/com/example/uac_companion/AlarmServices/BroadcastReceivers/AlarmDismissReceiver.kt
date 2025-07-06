@@ -13,18 +13,18 @@ class AlarmDismissReceiver : BroadcastReceiver() {
         AlarmServiceHolder.ringtone?.let { ringtone ->
             if (ringtone.isPlaying) {
                 ringtone.stop()
-                Log.d("AlarmDismissReceiver", "Ringtone stopped")
+                Log.d("UAC_Comp-AlarmDismissReceiver", "Ringtone stopped")
             }
             AlarmServiceHolder.ringtone = null
         }
 
         AlarmServiceHolder.vibrator?.let { vibrator ->
             vibrator.cancel()
-            Log.d("AlarmDismissReceiver", "Vibration cancelled")
+            Log.d("UAC_Comp-AlarmDismissReceiver", "Vibration cancelled")
             AlarmServiceHolder.vibrator = null
         }
 
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
-        Log.d("AlarmDismissReceiver", "Notification cancelled")
+        Log.d("UAC_Comp-AlarmDismissReceiver", "Notification cancelled")
     }
 }

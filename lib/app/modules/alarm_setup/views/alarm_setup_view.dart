@@ -1,8 +1,9 @@
+//! need a look
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:uac_companion/app/routes/app_routes.dart';
-import 'package:uac_companion/app/utils/watch_shape_service.dart';
-import '../../../utils/colors.dart';
+import 'package:uac_companion/app/modules/more/view/more_settings_view.dart';
+import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
+import 'package:uac_companion/app/utils/watch_shape_service.dart' as watch_shape;
 import '../controllers/alarm_setup_controllers.dart';
 import '../../smart_control.dart';
 
@@ -12,10 +13,10 @@ class AlarmSetupView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // final controller = Get.find<AlarmSetupControllers>();
-    final isRound = WatchShapeService.isRound;
+    final isRound = watch_shape.WatchShapeService.isRound;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: uac_colors.AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -28,7 +29,7 @@ class AlarmSetupView extends StatelessWidget {
                         horizontal: isRound ? 15 : 10,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.grayBlack,
+                        color: uac_colors.AppColors.grayBlack,
                         borderRadius: BorderRadius.circular(70),
                       ),
                       child: Row(
@@ -45,7 +46,7 @@ class AlarmSetupView extends StatelessWidget {
                             ':',
                             style: TextStyle(
                               fontSize: isRound ? 20 : 28,
-                              color: AppColors.notSeleted,
+                              color: uac_colors.AppColors.notSeleted,
                             ),
                           ),
                           _buildInfiniteScroll(
@@ -69,8 +70,8 @@ class AlarmSetupView extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _buildIconButton(0, Icons.more_vert, () async {
-                          final result =
-                              await Get.toNamed(AppRoutes.moreSettings);
+                          // final result =await Get.toNamed(AppRoutes.moreSettings);
+                          final result = await Get.to(() => const MoreSettingsView(),arguments: AlarmSetupControllers.to.selectedDays,);
                           if (result is List<int>) {
                             AlarmSetupControllers.to.selectedDays.value = result;
                           }
@@ -98,7 +99,7 @@ class AlarmSetupView extends StatelessWidget {
     FixedExtentScrollController controller,
     Function(int) onChanged,
   ) {
-    final isRound = WatchShapeService.isRound;
+    final isRound = watch_shape.WatchShapeService.isRound;
     return SizedBox(
       width: isRound ? 40 : 55,
       height: isRound ? 90 : 100,
@@ -122,7 +123,7 @@ class AlarmSetupView extends StatelessWidget {
                   style: TextStyle(
                     fontSize:
                         isSelected ? (isRound ? 25 : 30) : (isRound ? 20 : 20),
-                    color: isSelected ? AppColors.green : AppColors.notSeleted,
+                    color: isSelected ? uac_colors.AppColors.green : uac_colors.AppColors.notSeleted,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -141,7 +142,7 @@ class AlarmSetupView extends StatelessWidget {
     FixedExtentScrollController controller,
     Function(String) onChanged,
   ) {
-    final isRound = WatchShapeService.isRound;
+    final isRound = watch_shape.WatchShapeService.isRound;
     return SizedBox(
       width: isRound ? 40 : 55,
       height: isRound ? 90 : 100,
@@ -164,7 +165,7 @@ class AlarmSetupView extends StatelessWidget {
                   style: TextStyle(
                     fontSize:
                         isSelected ? (isRound ? 23 : 25) : (isRound ? 20 : 20),
-                    color: isSelected ? AppColors.green : AppColors.notSeleted,
+                    color: isSelected ? uac_colors.AppColors.green : uac_colors.AppColors.notSeleted,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -183,7 +184,7 @@ class AlarmSetupView extends StatelessWidget {
     VoidCallback onTap,
     bool isSelected,
   ) {
-    final isRound = WatchShapeService.isRound;
+    final isRound = watch_shape.WatchShapeService.isRound;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: GestureDetector(
@@ -191,7 +192,7 @@ class AlarmSetupView extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(isRound ? 5 : 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.green : AppColors.grayBlack,
+            color: isSelected ? uac_colors.AppColors.green : uac_colors.AppColors.grayBlack,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -205,7 +206,7 @@ class AlarmSetupView extends StatelessWidget {
           child: Icon(
             icon,
             size: 24,
-            color: isSelected ? AppColors.background : const Color(0xB3FFFFFF),
+            color: isSelected ? uac_colors.AppColors.background : const Color(0xB3FFFFFF),
           ),
         ),
       ),

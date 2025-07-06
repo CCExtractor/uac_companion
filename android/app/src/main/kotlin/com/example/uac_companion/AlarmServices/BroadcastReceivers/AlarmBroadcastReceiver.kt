@@ -21,20 +21,36 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AlarmBroadcastReceiver", "Alarm triggered!")
+        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Alarm triggered!")
 
         val alarmId = intent.getIntExtra("alarmId", -1)
         val hour = intent.getIntExtra("hour", 0)
         val minute = intent.getIntExtra("minute", 0)
 
         // Disable one-time alarm directly
-        if (intent.getStringExtra("days").isNullOrEmpty()) {
+        // if (intent.getStringExtra("days").isNullOrEmpty()) {
+        //     val db = AlarmDbModel(context).writableDatabase
+        //     db.execSQL("UPDATE alarms SET enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
+        //     db.close()
+        //     Log.d("UAC_Comp-AlarmBroadcastReceiver", "Disabled one-time alarm ID=$alarmId")
+        // }
+        val isSnoozed = intent.getBooleanExtra("isSnoozed", false)
+        val daysString = intent.getStringExtra("days") ?: ""
+        val isOnceAlarm = daysString.split(",").map { it.trim() }.filter { it.isNotEmpty() }.isEmpty()
+        
+        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Is one-time alarm: $isOnceAlarm")
+        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Days string: $daysString")
+        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Is snoozed alarm: $isSnoozed")
+        
+        if (isOnceAlarm && !isSnoozed) {
             val db = AlarmDbModel(context).writableDatabase
             db.execSQL("UPDATE alarms SET enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
             db.close()
-            Log.d("AlarmBroadcastReceiver", "Disabled one-time alarm ID=$alarmId")
+            Log.d("UAC_Comp-AlarmBroadcastReceiver", "Disabled one-time alarm ID=$alarmId")
+        } else if (isSnoozed) {
+            Log.d("UAC_Comp-AlarmBroadcastReceiver", "Snoozed alarm — skipping disable.")
         }
-
+             
         val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -62,7 +78,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
                 try {
                     it.play()
                 } catch (e: Exception) {
-                    Log.e("AlarmBroadcastReceiver", "Error playing ringtone", e)
+                    Log.e("UAC_Comp-AlarmBroadcastReceiver", "Error playing ringtone", e)
                 }
             }
         }
@@ -97,6 +113,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
                     putExtra("alarmId", alarmId)
                     putExtra("hour", hour)
                     putExtra("minute", minute)
+                    putExtra("isSnoozed", true)
                 }
         val snoozePendingIntent =
                 PendingIntent.getBroadcast(
@@ -128,6 +145,6 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
 
         // Schedule next upcoming alarm
         AlarmScheduler.scheduleNextAlarm(context)
-        Log.d("AlarmBroadcastReceiver", "Scheduled next upcoming alarm after trigger")
+        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Scheduled next upcoming alarm after trigger")
     }
 }
