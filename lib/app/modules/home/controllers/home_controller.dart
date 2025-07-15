@@ -39,42 +39,73 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> toggleAlarm(int id) async {
-    final updatedAlarms = alarms.map((alarm) {
-      if (alarm.id == id) {
-        final updated = Alarm(
-          id: alarm.id,
-          time: alarm.time,
-          days: alarm.days,
-          enabled: !alarm.enabled,
-        );
-        return updated;
-      }
-      return alarm;
-    }).toList();
-
-    final updatedAlarm = updatedAlarms.firstWhere((a) => a.id == id);
-    alarms.assignAll(updatedAlarms);
-    await alarmService.updateAlarm(updatedAlarm);
-
-    try {
-      await platform.invokeMethod('scheduleAlarm');
-      await loadAlarms();
-    } catch (e) {
-      debugPrint('HomeController -> Error toggling alarm: $e');
+  final updatedAlarms = alarms.map((alarm) {
+    if (alarm.id == id) {
+      final updated = Alarm(
+        id: alarm.id,
+        time: alarm.time,
+        days: alarm.days,
+        isEnabled: !alarm.isEnabled,
+        isOneTime: alarm.isOneTime,
+        fromWatch: alarm.fromWatch,
+        isLocationEnabled: false,
+        location: '',
+        isGuardian: false,
+        guardian: '',
+        guardianTimer: 0,
+        isCall: false,
+      );
+      return updated;
     }
+    return alarm;
+  }).toList();
+
+  final updatedAlarm = updatedAlarms.firstWhere((a) => a.id == id);
+  alarms.assignAll(updatedAlarms);
+  await alarmService.updateAlarm(updatedAlarm);
+  debugPrint('HomeController -> Alarm toggled: $updatedAlarm');
+
+  try {
+    if (!updatedAlarm.isEnabled) {
+      await platform.invokeMethod('cancelAlarm', {
+        'id': updatedAlarm.id,
+        'days': updatedAlarm.days,
+      });
+    }
+    await platform.invokeMethod('scheduleAlarm');
+    await loadAlarms();
+  } catch (e) {
+    debugPrint('HomeController -> Error toggling alarm: $e');
   }
+}
 
+  // Future<void> deleteAlarm(Alarm alarm) async {
+  //   if (alarm.id == null) return;
+
+  //   await alarmService.deleteAlarm(alarm.id!);
+  //   alarms.removeWhere((a) => a.id == alarm.id);
+
+  //   try {
+  //     await platform.invokeMethod('scheduleAlarm');
+  //     // const syncChannel = MethodChannel('uac_alarm_sync');
+  //     debugPrint('HomeController -> Alarm with ID ${alarm.id} deleted and scheduled for cancellation');
+  //     await loadAlarms();
+  //   } catch (e) {
+  //     debugPrint('HomeControlelr -> Alarm delete/schedule failed: $e');
+  //   }
+  // }
   Future<void> deleteAlarm(Alarm alarm) async {
-    if (alarm.id == null) return;
-
+  if (alarm.id == null) return;
+  try {
+    await platform.invokeMethod('cancelAlarm', {
+      'id': alarm.id,
+    });
     await alarmService.deleteAlarm(alarm.id!);
     alarms.removeWhere((a) => a.id == alarm.id);
-
-    try {
-      await platform.invokeMethod('scheduleAlarm');
-      await loadAlarms();
-    } catch (e) {
-      debugPrint('HomeControlelr -> Alarm delete/schedule failed: $e');
-    }
+    await platform.invokeMethod('scheduleAlarm');
+    await loadAlarms();
+  } catch (e) {
+    debugPrint('HomeController -> Alarm delete/cancel failed: $e');
   }
+}
 }

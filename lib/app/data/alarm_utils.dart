@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'alarm_model.dart';
 
-// Database helper class for managing SQLite operations
 class DBHelper {
   static final DBHelper instance = DBHelper._init();
   static Database? _database;
@@ -24,7 +23,15 @@ class DBHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         time TEXT NOT NULL,
         days TEXT NOT NULL,
-        enabled INTEGER NOT NULL
+        is_enabled INTEGER NOT NULL,
+        is_one_time INTEGER NOT NULL DEFAULT 1,
+        from_watch INTEGER NOT NULL DEFAULT 1,
+        is_location_enabled INTEGER NOT NULL DEFAULT 0,
+        location TEXT DEFAULT '',
+        is_guardian INTEGER NOT NULL DEFAULT 0,
+        guardian TEXT DEFAULT '',
+        guardian_timer INTEGER NOT NULL DEFAULT 0,
+        is_call INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -46,27 +53,35 @@ class DBHelper {
   }
 }
 
-// Alarm Services or Funcitons
 class AlarmDBService {
   static const String _table = 'alarms';
+
   Future<Alarm> insertNewAlarm(Alarm alarm) async {
     final map = alarm.toMap();
     map.remove('id');
     final rawId = await DBHelper.instance.insert(_table, map);
 
-    //** Need offset in order to avoid conflict while syncing with UAC
+    //** Offset to avoid ID conflict with phone-side alarms
     var offsetId = rawId;
-    if(rawId == 1) {
+    if (rawId == 1) {
       offsetId = rawId + 10000;
     }
-    
+
     await DBHelper.instance.update(_table, {'id': offsetId}, rawId);
 
     return Alarm(
       id: offsetId,
       time: alarm.time,
       days: alarm.days,
-      enabled: alarm.enabled,
+      isEnabled: alarm.isEnabled,
+      isOneTime: alarm.isOneTime,
+      fromWatch: alarm.fromWatch,
+      isLocationEnabled: alarm.isLocationEnabled,
+      location: alarm.location,
+      isGuardian: alarm.isGuardian,
+      guardian: alarm.guardian,
+      guardianTimer: alarm.guardianTimer,
+      isCall: alarm.isCall,
     );
   }
 

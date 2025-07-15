@@ -33,7 +33,6 @@ class AlarmSetupControllers extends GetxController {
     initialMinute = args['initialMinute'];
     alarmId = args['alarmId'];
 
-    //* Much needed in order to avoid days issues on updating an alarm
     final existingDays = args['existingDays'];
     if (existingDays is List<int>) {
       selectedDays.assignAll(androidToFlutterDays(existingDays));
@@ -47,32 +46,61 @@ class AlarmSetupControllers extends GetxController {
     selectedPeriod.value = timeMap['period'];
     selectedMinute.value = minute;
 
-    hourController = FixedExtentScrollController(initialItem: selectedHour.value - 1);
-    minuteController = FixedExtentScrollController(initialItem: selectedMinute.value);
-    periodController = FixedExtentScrollController(initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
+    hourController =
+        FixedExtentScrollController(initialItem: selectedHour.value - 1);
+    minuteController =
+        FixedExtentScrollController(initialItem: selectedMinute.value);
+    periodController = FixedExtentScrollController(
+        initialItem: selectedPeriod.value == 'AM' ? 0 : 1);
   }
 
   Future<void> confirmTime() async {
     final hour24 = to24Hour(selectedHour.value, selectedPeriod.value);
     final formattedTime = formatTime(hour24, selectedMinute.value);
     final androidDays = flutterToAndroidDays(selectedDays);
+    const alarmChannel = MethodChannel('uac_alarm_channel');
+    const syncChannel = MethodChannel('uac_alarm_sync');
 
     final alarm = Alarm(
       id: alarmId,
       time: formattedTime,
       days: androidDays,
-      enabled: true,
+      isEnabled: true,
+      isOneTime: selectedDays.isEmpty ? 1 : 0,
+      fromWatch: true,
+      // default values for unimplemented features
+      isLocationEnabled: false,
+      location: '',
+      isGuardian: false,
+      guardian: '',
+      guardianTimer: 0,
+      isCall: false,
     );
 
     debugPrint('flutter before insert/update: $alarm');
 
+    // final dbService = AlarmDBService();
+    // final finalAlarmId = alarmId != null
+    //     ? await dbService.updateAlarm(alarm).then((_) => alarm.id!)
+    //     : await dbService.insertNewAlarm(alarm);
     final dbService = AlarmDBService();
-    final finalAlarmId = alarmId != null
-        ? await dbService.updateAlarm(alarm).then((_) => alarm.id!)
-        : await dbService.insertNewAlarm(alarm);
+    int finalAlarmId;
 
+    if (alarmId != null) {
+      await dbService.updateAlarm(alarm);
+      finalAlarmId = alarm.id!;
+    } else {
+      final insertedAlarm = await dbService.insertNewAlarm(alarm);
+      finalAlarmId = insertedAlarm.id!;
+      alarmId = finalAlarmId;
+    }
     debugPrint("alarmID -> $finalAlarmId");
-    await platform.invokeMethod('scheduleAlarm');
+    await alarmChannel.invokeMethod('scheduleAlarm');
+
+    final alarmMap = alarm.toMap();
+    alarmMap['id'] = finalAlarmId;
+    await syncChannel.invokeMethod('sendAlarmToPhone', alarmMap);
+
     Get.back(result: true);
   }
 

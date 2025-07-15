@@ -14,6 +14,7 @@ object AlarmServiceHolder {
 }
 
 class AlarmBroadcastReceiver : BroadcastReceiver() {
+    final val TAG = "AlarmBroadcastReceiver"
 
     companion object {
         private const val CHANNEL_ID = "uac_alarm_channel_id"
@@ -21,7 +22,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Alarm triggered!")
+        Log.d(TAG, "Alarm triggered!")
 
         val alarmId = intent.getIntExtra("alarmId", -1)
         val hour = intent.getIntExtra("hour", 0)
@@ -37,18 +38,14 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         val isSnoozed = intent.getBooleanExtra("isSnoozed", false)
         val daysString = intent.getStringExtra("days") ?: ""
         val isOnceAlarm = daysString.split(",").map { it.trim() }.filter { it.isNotEmpty() }.isEmpty()
-        
-        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Is one-time alarm: $isOnceAlarm")
-        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Days string: $daysString")
-        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Is snoozed alarm: $isSnoozed")
-        
+
         if (isOnceAlarm && !isSnoozed) {
             val db = AlarmDbModel(context).writableDatabase
-            db.execSQL("UPDATE alarms SET enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
+            db.execSQL("UPDATE alarms SET is_enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
             db.close()
-            Log.d("UAC_Comp-AlarmBroadcastReceiver", "Disabled one-time alarm ID=$alarmId")
+            Log.d(TAG, "Disabled one-time alarm ID=$alarmId")
         } else if (isSnoozed) {
-            Log.d("UAC_Comp-AlarmBroadcastReceiver", "Snoozed alarm — skipping disable.")
+            Log.d(TAG, "Snoozed alarm — skipping disable.")
         }
              
         val notificationManager =
@@ -78,7 +75,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
                 try {
                     it.play()
                 } catch (e: Exception) {
-                    Log.e("UAC_Comp-AlarmBroadcastReceiver", "Error playing ringtone", e)
+                    Log.e(TAG, "Error playing ringtone", e)
                 }
             }
         }
@@ -145,6 +142,6 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
 
         // Schedule next upcoming alarm
         AlarmScheduler.scheduleNextAlarm(context)
-        Log.d("UAC_Comp-AlarmBroadcastReceiver", "Scheduled next upcoming alarm after trigger")
+        Log.d(TAG, "Scheduled next upcoming alarm after trigger")
     }
 }

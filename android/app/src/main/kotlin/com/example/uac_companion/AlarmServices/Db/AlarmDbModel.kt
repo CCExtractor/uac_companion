@@ -8,7 +8,15 @@ data class Alarm(
     val id: Int,
     val time: String,
     val days: List<Int>,
-    val enabled: Boolean
+    val isEnabled: Int,
+    val isOneTime: Int,
+    val fromWatch: Boolean,
+    val isLocationEnabled: Boolean = false,
+    val location: String = "",
+    val isGuardian: Boolean = false,
+    val guardian: String = "",
+    val guardianTimer: Int = 0,
+    val isCall: Boolean = false
 )
 
 class AlarmDbModel(context: Context) : SQLiteOpenHelper(
@@ -17,6 +25,6 @@ class AlarmDbModel(context: Context) : SQLiteOpenHelper(
     null,
     1
 ) {
-    override fun onCreate(db: SQLiteDatabase) {} // Flutter handles it
+    override fun onCreate(db: SQLiteDatabase) {}
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
 }

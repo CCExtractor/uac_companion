@@ -4,15 +4,19 @@ import android.app.*
 import android.content.*
 import android.os.Build
 import android.util.Log
+import com.ccextractor.uac_companion.communication.WatchAlarmSender
 
 class AlarmSnoozeReceiver : BroadcastReceiver() {
+    final val TAG = "AlarmSnoozeReceiver"
 //!need fixes alarm snoozes but with warning - W/Ringtone: Neither local nor remote playback available
     override fun onReceive(context: Context, intent: Intent) {
         val alarmId = intent.getIntExtra("alarmId", -1)
         val hour = intent.getIntExtra("hour", -1)
         val minute = intent.getIntExtra("minute", -1)
 
-        Log.d("UAC_Comp-AlarmSnoozeReceiver", "Snoozing alarmId=$alarmId for +1 minute...")
+        WatchAlarmSender.sendActionToPhone(context, "dismiss")
+
+        Log.d(TAG, "Snoozing alarmId=$alarmId for +1 minute...")
 
         // Stop current sound/vibration/notification
         AlarmServiceHolder.ringtone?.stop()
@@ -45,6 +49,6 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, snoozePendingIntent)
         }
 
-        Log.d("UAC_Comp-AlarmSnoozeReceiver", "→ Snoozed alarmId=$alarmId to $triggerAtMillis")
+        Log.d(TAG, "→ Snoozed alarmId=$alarmId to $triggerAtMillis")
     }
 }

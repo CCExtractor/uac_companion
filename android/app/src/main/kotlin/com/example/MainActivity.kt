@@ -5,6 +5,7 @@ import android.app.AlarmManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -12,36 +13,56 @@ import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.ccextractor.uac_companion.communication.WatchAlarmSender
+import com.ccextractor.uac_companion.communication.parseAlarm
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "uac_alarm_channel"
+    private val ALARM_SYNC_CHANNEL = "uac_alarm_sync"
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         checkAndRequestPermissions()
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
-                call,
-                result ->
-            when (call.method) {
-                "scheduleAlarm" -> {
-                    AlarmScheduler.scheduleNextAlarm(this)
-                    result.success(null)
-                }
-                "cancelAlarm" -> {
-                    val id = call.argument<Int>("id")
-                    if (id != null) {
-                        AlarmScheduler.cancelAlarm(this, id)
+        // Method channel for scheduling and canceling alarms
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "uac_alarm_channel")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "scheduleAlarm" -> {
+                        AlarmScheduler.scheduleNextAlarm(this)
                         result.success(null)
-                    } else {
-                        result.error("INVALID_ID", "Alarm ID missing", null)
                     }
+                    "cancelAlarm" -> {
+                        val id = call.argument<Int>("id")
+                        if (id != null) {
+                            AlarmScheduler.cancelAlarm(this, id)
+                            result.success(null)
+                        } else {
+                            result.error("INVALID_ID", "Alarm ID missing", null)
+                        }
+                    }
+                    else -> result.notImplemented()
                 }
-                else -> result.notImplemented()
             }
-        }
-    }
+    
+        // Method channel for sending alarms to the phone from the watch
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SYNC_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "sendAlarmToPhone") {
+                    try {
+                        val args = call.arguments as Map<*, *>
+                        val alarm = parseAlarm(args)
+                        com.ccextractor.uac_companion.communication.WatchAlarmSender.sendAlarmToPhone(this, alarm)
+                        result.success("sent")
+                    } catch (e: Exception) {
+                        Log.e("UAC_WatchChannel", "Failed to parse/send alarm", e)
+                        result.error("error", "Invalid alarm data", null)
+                    }
+                } else {
+                    result.notImplemented()
+                }
+            }
+    }    
 
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

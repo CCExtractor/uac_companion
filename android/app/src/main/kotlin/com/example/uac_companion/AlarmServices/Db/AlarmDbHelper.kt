@@ -16,13 +16,21 @@ class AlarmDbHelper {
                 val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
                 val time = cursor.getString(cursor.getColumnIndexOrThrow("time"))
                 val daysString = cursor.getString(cursor.getColumnIndexOrThrow("days"))
-                val enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled")) == 1
+                val isEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_enabled"))
+                val isOneTime = cursor.getInt(cursor.getColumnIndexOrThrow("is_one_time"))
+                val fromWatch = cursor.getInt(cursor.getColumnIndexOrThrow("from_watch")) == 1
+                val isLocationEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_location_enabled")) == 1
+                val location = cursor.getString(cursor.getColumnIndexOrThrow("location")) ?: ""
+                val isGuardian = cursor.getInt(cursor.getColumnIndexOrThrow("is_guardian")) == 1
+                val guardian = cursor.getString(cursor.getColumnIndexOrThrow("guardian")) ?: ""
+                val guardianTimer = cursor.getInt(cursor.getColumnIndexOrThrow("guardian_timer"))
+                val isCall = cursor.getInt(cursor.getColumnIndexOrThrow("is_call")) == 1
 
                 val days = daysString
                     .split(",")
                     .mapNotNull { it.trim().toIntOrNull() }
 
-                alarms.add(Alarm(id, time, days, enabled))
+                alarms.add(Alarm(id, time, days, isEnabled, isOneTime, fromWatch, isLocationEnabled, location, isGuardian, guardian, guardianTimer, isCall))
             } while (cursor.moveToNext())
         }
 
