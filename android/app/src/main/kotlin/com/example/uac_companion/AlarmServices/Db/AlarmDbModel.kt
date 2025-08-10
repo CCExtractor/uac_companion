@@ -11,12 +11,27 @@ data class Alarm(
     val isEnabled: Int,
     val isOneTime: Int,
     val fromWatch: Boolean,
-    val isLocationEnabled: Boolean = false,
-    val location: String = "",
+
+    // Screen Activity
+    val isActivityEnabled: Boolean = false,
+    val activityInterval: Int = 0,
+    val activityConditionType: Int = 0,
+
+    // Guardian Angel
     val isGuardian: Boolean = false,
     val guardian: String = "",
     val guardianTimer: Int = 0,
-    val isCall: Boolean = false
+    val isCall: Boolean = false,
+
+    // Weather Condition
+    val isWeatherEnabled: Boolean = false,
+    val weatherConditionType: Int = 0,
+    val weatherTypes: List<Int> = emptyList(),
+
+    // Location Condition
+    val isLocationEnabled: Boolean = false,
+    val location: String = "",
+    val locationConditionType: Int = 0
 )
 
 class AlarmDbModel(context: Context) : SQLiteOpenHelper(

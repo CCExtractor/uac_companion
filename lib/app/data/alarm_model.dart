@@ -1,65 +1,110 @@
 class Alarm {
-  // final int? id;
   int? id;
   final String time;
   final List<int> days;
   final bool isEnabled;
   final int isOneTime;
   final bool fromWatch;
-  final bool isLocationEnabled;
-  final String location;
+
+  // Screen Activity
+  final bool isActivityEnabled;
+  final int activityInterval;
+  final int activityConditionType;
+
+  // Guardian Angel
   final bool isGuardian;
   final String guardian;
   final int guardianTimer;
   final bool isCall;
-  //final bool isScreen
-  //final int screenTime
-  //final bool isWeather
-  //final String weather
-  
+
+  // Weather Condition
+  final bool isWeatherEnabled;
+  final int weatherConditionType;
+  final List<int> weatherTypes;
+
+  // Location Condition
+  final bool isLocationEnabled;
+  final String location;
+  final int locationConditionType;
+
   Alarm({
-    required this.id,
+    this.id,
     required this.time,
     required this.days,
     required this.isEnabled,
     required this.isOneTime,
     required this.fromWatch,
-    this.isLocationEnabled = false,
-    this.location = '',
+    this.isActivityEnabled = false,
+    this.activityInterval = 0,
+    this.activityConditionType = 0,
     this.isGuardian = false,
     this.guardian = '',
     this.guardianTimer = 0,
     this.isCall = false,
+    this.isWeatherEnabled = false,
+    this.weatherConditionType = 0,
+    this.weatherTypes = const [],
+    this.isLocationEnabled = false,
+    this.location = '',
+    this.locationConditionType = 0,
   });
 
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
         'time': time,
         'days': days.join(','),
-        'is_enabled': isEnabled == true ? 1 : 0,
+        'is_enabled': isEnabled ? 1 : 0,
         'is_one_time': isOneTime,
         'from_watch': fromWatch ? 1 : 0,
-        'is_location_enabled': isLocationEnabled ? 1 : 0,
-        'location': location,
+
+        // Screen Activity
+        'is_activity_enabled': isActivityEnabled ? 1 : 0,
+        'activity_interval': activityInterval,
+        'activity_condition_type': activityConditionType,
+
+        // Guardian Angel
         'is_guardian': isGuardian ? 1 : 0,
         'guardian': guardian,
         'guardian_timer': guardianTimer,
         'is_call': isCall ? 1 : 0,
+
+        // Weather Condition
+        'is_weather_enabled': isWeatherEnabled ? 1 : 0,
+        'weather_condition_type': weatherConditionType,
+        'weather_types': weatherTypes.join(','),
+
+        // Location Condition
+        'is_location_enabled': isLocationEnabled ? 1 : 0,
+        'location': location,
+        'location_condition_type': locationConditionType,
       };
 
   @override
-  String toString() => 'Alarm(id: $id, time: $time, days: $days, isEnabled: $isEnabled, '
-      'isOneTime: $isOneTime, fromWatch: $fromWatch ,isLocationEnabled: $isLocationEnabled, '
-      'location: $location, isGuardian: $isGuardian, guardian: $guardian, '
-      'guardianTimer: $guardianTimer, isCall: $isCall)';
+  String toString() => 'Alarm(id: $id, time: $time, days: $days, '
+      'isEnabled: $isEnabled, isOneTime: $isOneTime, fromWatch: $fromWatch, '
+      'isActivityEnabled: $isActivityEnabled, activityInterval: $activityInterval, activityConditionType: $activityConditionType, '
+      'isGuardian: $isGuardian, guardian: $guardian, guardianTimer: $guardianTimer, isCall: $isCall, '
+      'isWeatherEnabled: $isWeatherEnabled, weatherConditionType: $weatherConditionType, weatherTypes: $weatherTypes, '
+      'isLocationEnabled: $isLocationEnabled, location: $location, locationConditionType: $locationConditionType)';
+
 }
 
 Alarm alarmFromMap(Map<String, dynamic> map) {
   final rawDays = map['days'];
   List<int> parsedDays = [];
-
   if (rawDays is String && rawDays.isNotEmpty) {
     parsedDays = rawDays
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .where((e) => e != null)
+        .map((e) => e!)
+        .toList();
+  }
+
+  final rawWeatherTypes = map['weather_types'];
+  List<int> parsedWeatherTypes = [];
+  if (rawWeatherTypes is String && rawWeatherTypes.isNotEmpty) {
+    parsedWeatherTypes = rawWeatherTypes
         .split(',')
         .map((s) => int.tryParse(s.trim()))
         .where((e) => e != null)
@@ -71,14 +116,29 @@ Alarm alarmFromMap(Map<String, dynamic> map) {
     id: map['id'],
     time: map['time'],
     days: parsedDays,
-    isEnabled: map['is_enabled'] == 1,
+    isEnabled: (map['is_enabled'] ?? 0) == 1,
     isOneTime: map['is_one_time'] ?? 1,
-    fromWatch: map['from_watch'] == 1,
-    isLocationEnabled: (map['is_location_enabled'] ?? 0) == 1,
-    location: map['location'] ?? '',
+    fromWatch: (map['from_watch'] ?? 0) == 1,
+
+    // Screen Activity
+    isActivityEnabled: (map['is_activity_enabled'] ?? 0) == 1,
+    activityInterval: map['activity_interval'] ?? 0,
+    activityConditionType: map['activity_condition_type'] ?? 0,
+
+    // Guardian Angel
     isGuardian: (map['is_guardian'] ?? 0) == 1,
     guardian: map['guardian'] ?? '',
     guardianTimer: map['guardian_timer'] ?? 0,
     isCall: (map['is_call'] ?? 0) == 1,
+
+    // Weather Condition
+    isWeatherEnabled: (map['is_weather_enabled'] ?? 0) == 1,
+    weatherConditionType: map['weather_condition_type'] ?? 0,
+    weatherTypes: parsedWeatherTypes,
+
+    // Location Condition
+    isLocationEnabled: (map['is_location_enabled'] ?? 0) == 1,
+    location: map['location'] ?? '',
+    locationConditionType: map['location_condition_type'] ?? 0,
   );
 }

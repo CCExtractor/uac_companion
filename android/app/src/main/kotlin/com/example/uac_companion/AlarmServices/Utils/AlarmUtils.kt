@@ -56,14 +56,26 @@ object AlarmUtils {
             val isEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_enabled"))
             val isOneTime = cursor.getInt(cursor.getColumnIndexOrThrow("is_one_time"))
             val fromWatch = cursor.getInt(cursor.getColumnIndexOrThrow("from_watch")) == 1
-            val isLocationEnabled =
-                    cursor.getInt(cursor.getColumnIndexOrThrow("is_location_enabled")) == 1
-            val location = cursor.getString(cursor.getColumnIndexOrThrow("location")) ?: ""
+            
+            val isActivityEnabled = cursor.getInt(cursor.getColumnIndex("is_activity_enabled")) == 1
+            val activityInterval = cursor.getInt(cursor.getColumnIndex("activity_interval"))
+            val activityConditionType = cursor.getInt(cursor.getColumnIndex("activity_condition_type"))
+            
             val isGuardian = cursor.getInt(cursor.getColumnIndexOrThrow("is_guardian")) == 1
             val guardian = cursor.getString(cursor.getColumnIndexOrThrow("guardian")) ?: ""
-            val guardianTimer = cursor.getInt(cursor.getColumnIndexOrThrow("guardian_timer"))
+            val guardianTimer = cursor.getInt(cursor.getColumnIndex("guardian_timer"))
             val isCall = cursor.getInt(cursor.getColumnIndexOrThrow("is_call")) == 1
-
+            
+            val isWeatherEnabled = cursor.getInt(cursor.getColumnIndex("is_weather_enabled")) == 1
+            val weatherConditionType = cursor.getInt(cursor.getColumnIndex("weather_condition_type"))
+            // val weatherTypes = cursor.getString(cursor.getColumnIndex("weather_types"))
+            val weatherTypesRaw = cursor.getString(cursor.getColumnIndex("weather_types")) ?: ""
+            val weatherTypes = weatherTypesRaw.split(",").mapNotNull { it.trim().toIntOrNull() }
+            
+            val isLocationEnabled =
+            cursor.getInt(cursor.getColumnIndexOrThrow("is_location_enabled")) == 1
+            val location = cursor.getString(cursor.getColumnIndexOrThrow("location")) ?: ""
+            val locationConditionType = cursor.getInt(cursor.getColumnIndex("location_condition_type"))
             val days = daysRaw.split(",").mapNotNull { it.trim().toIntOrNull() }
 
             alarms.add(
@@ -74,12 +86,24 @@ object AlarmUtils {
                             isEnabled,
                             isOneTime,
                             fromWatch,
-                            isLocationEnabled,
-                            location,
+
+                            isActivityEnabled,
+                            activityInterval,
+                            activityConditionType,
+
                             isGuardian,
                             guardian,
                             guardianTimer,
-                            isCall
+                            isCall,
+
+                            isWeatherEnabled,
+                            weatherConditionType,
+                            weatherTypes,
+
+                            isLocationEnabled,
+                            location,
+                            locationConditionType
+
                     )
             )
         }
