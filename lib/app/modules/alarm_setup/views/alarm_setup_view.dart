@@ -5,7 +5,7 @@ import 'package:uac_companion/app/modules/more/view/more_settings_view.dart';
 import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart' as watch_shape;
 import '../controllers/alarm_setup_controllers.dart';
-import '../../smart_control.dart';
+import '../../smart_control/views/smart_control.dart';
 
 class AlarmSetupView extends StatelessWidget {
   const AlarmSetupView({super.key});

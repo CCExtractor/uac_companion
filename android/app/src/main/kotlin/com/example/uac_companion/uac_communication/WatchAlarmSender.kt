@@ -8,10 +8,12 @@ import com.google.gson.Gson
 
 object WatchAlarmSender {
     private const val TAG = "UAC_WatchSender"
-    private const val PATH = "/uac_alarm_sync/alarm"
+    private val PATH_ACTION_WATCH_TO_PHONE = "/uac_watch_to_phone/action"
+    private val PATH_ALARM_WATCH_TO_PHONE = "/uac_watch_to_phone/alarm"
 
     fun sendAlarmToPhone(context: Context, alarm: Alarm) {
         val alarmJson = Gson().toJson(alarm)
+        Log.d(TAG, "Preparing to send alarm with id=${alarm.id}")
         sendAlarmToPhone(context, alarmJson)
     }
 
@@ -20,9 +22,10 @@ object WatchAlarmSender {
 
         Log.d(TAG, "Sending alarm block to phone: $alarmJson")
 
-        val putDataMapRequest = PutDataMapRequest.create(PATH)
+        val putDataMapRequest = PutDataMapRequest.create(PATH_ALARM_WATCH_TO_PHONE)
         val dataMap = putDataMapRequest.dataMap
 
+        // dataMap.putString("alarm_id", alarmId)
         dataMap.putString("alarm_json", alarmJson)
         dataMap.putLong("timestamp", timestamp)
 
@@ -34,23 +37,25 @@ object WatchAlarmSender {
                 .addOnFailureListener { e -> Log.e(TAG, "Alarm sync failed via DataClient", e) }
     }
 
-    fun sendActionToPhone(context: Context, action: String) {
+    fun sendActionToPhone(context: Context, action: String, alarmId: Int) {
         val timestamp = System.currentTimeMillis()
-        val path = "/uac_alarm_sync/action"
-
-        Log.d(TAG, "Sending action to phone: $action")
-
-        val putDataMapRequest = PutDataMapRequest.create(path)
+        // val path = PATH_ALARM_WATCH_TO_PHONE
+    
+        Log.d(TAG, "Sending action to phone: $action, alarmId: $alarmId")
+    
+        val putDataMapRequest = PutDataMapRequest.create(PATH_ACTION_WATCH_TO_PHONE)
         val dataMap = putDataMapRequest.dataMap
-
-        dataMap.putString("alarm_json", action)
+    
+        // FIX: match keys used on receiving side
+        dataMap.putString("action", action)
+        dataMap.putInt("alarm_id", alarmId)
         dataMap.putLong("timestamp", timestamp)
-
+    
         val request = putDataMapRequest.asPutDataRequest().setUrgent()
-
+    
         Wearable.getDataClient(context)
-                .putDataItem(request)
-                .addOnSuccessListener { Log.d(TAG, "Action sent via DataClient: $action") }
-                .addOnFailureListener { e -> Log.e(TAG, "Action send failed via DataClient", e) }
-    }
+            .putDataItem(request)
+            .addOnSuccessListener { Log.d(TAG, "Action sent via DataClient: $action") }
+            .addOnFailureListener { e -> Log.e(TAG, "Action send failed via DataClient", e) }
+    }    
 }

@@ -8,15 +8,18 @@ import com.ccextractor.uac_companion.communication.WatchAlarmSender
 
 class AlarmSnoozeReceiver : BroadcastReceiver() {
     final val TAG = "AlarmSnoozeReceiver"
-//!need fixes alarm snoozes but with warning - W/Ringtone: Neither local nor remote playback available
+//!need fixes alarm snoozes but with warning - W/Ringtone: Neither local nor remote playback available that makes the alarm to ring after 5 min but the alrm do not ring
     override fun onReceive(context: Context, intent: Intent) {
         val alarmId = intent.getIntExtra("alarmId", -1)
         val hour = intent.getIntExtra("hour", -1)
         val minute = intent.getIntExtra("minute", -1)
+        val fromPhone = intent?.getBooleanExtra("fromPhone", false) ?: false
 
-        WatchAlarmSender.sendActionToPhone(context, "dismiss")
+        if (!fromPhone) {
+            WatchAlarmSender.sendActionToPhone(context, "snooze", alarmId)
+        }
 
-        Log.d(TAG, "Snoozing alarmId=$alarmId for +1 minute...")
+        Log.d(TAG, "Snoozing alarmId=$alarmId for +5 minute...")
 
         // Stop current sound/vibration/notification
         AlarmServiceHolder.ringtone?.stop()
@@ -24,9 +27,9 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
 
-        // Reschedule the alarm 1 minute ahead
+        // Reschedule the alarm 5 minute ahead
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val triggerAtMillis = System.currentTimeMillis() + 60_000
+        val triggerAtMillis = System.currentTimeMillis() + 300_000
 
         val snoozeIntent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
             putExtra("alarmId", alarmId)

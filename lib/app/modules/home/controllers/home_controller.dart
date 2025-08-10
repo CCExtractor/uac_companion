@@ -16,6 +16,13 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     loadAlarms();
+
+    const MethodChannel('uac_alarm_channel').setMethodCallHandler((call) async {
+    if (call.method == 'onAlarmInserted') {
+      debugPrint('Flutter: Received onAlarmInserted from native');
+      await loadAlarms();
+    }
+  });
   }
 
   //* Needed for the WidgetsBindingObserver to listen to app lifecycle changes

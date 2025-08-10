@@ -20,7 +20,7 @@
             android:name="com.google.android.wearable"
             android:required="true" />
         <service
-            android:name=".communication.DataClientReceiverService"
+            android:name=".communication.UACDataLayerListenerService"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />

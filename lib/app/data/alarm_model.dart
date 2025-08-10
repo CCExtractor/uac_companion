@@ -36,7 +36,7 @@ class Alarm {
         if (id != null) 'id': id,
         'time': time,
         'days': days.join(','),
-        'is_enabled': isEnabled ? 1 : 0,
+        'is_enabled': isEnabled == true ? 1 : 0,
         'is_one_time': isOneTime,
         'from_watch': fromWatch ? 1 : 0,
         'is_location_enabled': isLocationEnabled ? 1 : 0,

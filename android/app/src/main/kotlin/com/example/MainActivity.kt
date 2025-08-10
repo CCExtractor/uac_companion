@@ -15,17 +15,20 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import com.ccextractor.uac_companion.communication.WatchAlarmSender
 import com.ccextractor.uac_companion.communication.parseAlarm
+import com.ccextractor.uac_companion.communication.UACDataLayerListenerService
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "uac_alarm_channel"
+    private val NATIVE_TO_FLUTTER = "uac_kotlin_to_flutter"
     private val ALARM_SYNC_CHANNEL = "uac_alarm_sync"
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         checkAndRequestPermissions()
-        // Method channel for scheduling and canceling alarms
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "uac_alarm_channel")
+        UACDataLayerListenerService.flutterEngine = flutterEngine
+       
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "scheduleAlarm" -> {
