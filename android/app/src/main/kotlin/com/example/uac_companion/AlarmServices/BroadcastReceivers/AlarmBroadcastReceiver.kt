@@ -23,10 +23,11 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "Alarm triggered!")
-
         val alarmId = intent.getIntExtra("alarmId", -1)
+        val watchId = intent.getIntExtra("watchId", -1)
         val hour = intent.getIntExtra("hour", 0)
         val minute = intent.getIntExtra("minute", 0)
+        Log.d(TAG, "received intents: $alarmId, $watchId, ")
 
         // Disable one-time alarm directly
         // if (intent.getStringExtra("days").isNullOrEmpty()) {
@@ -41,9 +42,9 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
 
         if (isOnceAlarm && !isSnoozed) {
             val db = AlarmDbModel(context).writableDatabase
-            db.execSQL("UPDATE alarms SET is_enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
+            db.execSQL("UPDATE alarms SET is_enabled = 0 WHERE watch_id = ?", arrayOf(watchId.toString()))
             db.close()
-            Log.d(TAG, "Disabled one-time alarm ID=$alarmId")
+            Log.d(TAG, "Disabled one-time watchId=$watchId and alarmId=$alarmId")
         } else if (isSnoozed) {
             Log.d(TAG, "Snoozed alarm — skipping disable.")
         }
@@ -93,13 +94,16 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         // Dismiss Intent
         val dismissIntent =
                 Intent(context, AlarmDismissReceiver::class.java).apply {
-                    action = "com.ccextractor.uac_companion.ALARM_DISMISS_$alarmId"
+                    // action = "com.ccextractor.uac_companion.ALARM_DISMISS_$alarmId"
+                    action = "com.ccextractor.uac_companion.ALARM_DISMISS_$watchId"
                     putExtra("alarmId", alarmId)
+                    putExtra("watchId", watchId)
                 }
         val dismissPendingIntent =
                 PendingIntent.getBroadcast(
                         context,
-                        alarmId,
+                        // alarmId,
+                        watchId,
                         dismissIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
@@ -108,6 +112,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         val snoozeIntent =
                 Intent(context, AlarmSnoozeReceiver::class.java).apply {
                     putExtra("alarmId", alarmId)
+                    putExtra("watchId", watchId)
                     putExtra("hour", hour)
                     putExtra("minute", minute)
                     putExtra("isSnoozed", true)
@@ -115,7 +120,8 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         val snoozePendingIntent =
                 PendingIntent.getBroadcast(
                         context,
-                        alarmId,
+                        // alarmId,
+                        watchId,
                         snoozeIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )

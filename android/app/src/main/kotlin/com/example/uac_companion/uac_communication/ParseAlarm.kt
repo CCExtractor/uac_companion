@@ -12,6 +12,9 @@ fun parseAlarm(map: Map<*, *>): Alarm {
             ?.split(",")
             ?.mapNotNull { it.trim().toIntOrNull() }
             ?: emptyList(),
+        // phoneId = map["phone_id"] as? String ?: "",
+        // watchId = (map["watch_id"] as? Number).toInt(),
+        watchId = (map["watch_id"] as? Number)?.toInt() ?: -1,
         isEnabled = (map["is_enabled"] as? Number)?.toInt() ?: 0,
         isOneTime = map["is_one_time"] as? Int ?: 1,
         fromWatch = (map["from_watch"] as? Int ?: 0) == 1,

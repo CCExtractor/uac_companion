@@ -1,72 +1,58 @@
 import 'package:flutter/material.dart';
-import 'package:uac_companion/app/modules/smart_control/views/screen_activity_timer.dart';
+import 'package:uac_companion/app/modules/smart_control/views/weather_condition_picker.dart';
 import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
-enum ActivityConditionType {
-  off,
-  ringWhenActive,
-  cancelWhenActive,
-  ringWhenInactive,
-  cancelWhenInactive,
+enum WeatherConditionType {
+  ringWhenMatch,
+  cancelWhenMatch,
+  ringWhenDifferent,
+  cancelWhenDifferent,
 }
 
-class ScreenActivity extends StatefulWidget {
-  const ScreenActivity({super.key});
+class WeatherConditionScreen extends StatefulWidget {
+  const WeatherConditionScreen({super.key});
 
   @override
-  State<ScreenActivity> createState() => _ScreenActivityState();
+  State<WeatherConditionScreen> createState() => _WeatherConditionScreenState();
 }
 
-class _ScreenActivityState extends State<ScreenActivity> {
+class _WeatherConditionScreenState extends State<WeatherConditionScreen> {
   int? selectedIndex;
 
   final List<Map<String, dynamic>> options = [
-    {'label': 'Ring when Active', 'type': ActivityConditionType.ringWhenActive},
-    {
-      'label': 'Cancel when Active',
-      'type': ActivityConditionType.cancelWhenActive
-    },
-    {
-      'label': 'Ring when Inactive',
-      'type': ActivityConditionType.ringWhenInactive
-    },
-    {
-      'label': 'Cancel when Inactive',
-      'type': ActivityConditionType.cancelWhenInactive
-    },
+    {'label': 'Ring when Match', 'type': WeatherConditionType.ringWhenMatch},
+    {'label': 'Cancel when Match', 'type': WeatherConditionType.cancelWhenMatch},
+    {'label': 'Ring when Different', 'type': WeatherConditionType.ringWhenDifferent},
+    {'label': 'Cancel when Different', 'type': WeatherConditionType.cancelWhenDifferent},
   ];
 
-  IconData _getActivityConditionIcon(ActivityConditionType conditionType) {
-    switch (conditionType) {
-      case ActivityConditionType.off:
-        return Icons.smartphone_outlined;
-      case ActivityConditionType.ringWhenActive:
-        return Icons.smartphone;
-      case ActivityConditionType.cancelWhenActive:
-        return Icons.phone_android;
-      case ActivityConditionType.ringWhenInactive:
-        return Icons.mobile_off;
-      case ActivityConditionType.cancelWhenInactive:
-        return Icons.do_not_disturb_on;
-    }
-  }
-
-  void _onSelect(int index, BuildContext context) {
+  void _onSelect(int index) {
     setState(() {
       selectedIndex = index;
     });
 
-    debugPrint('Selected option: ${options[index]['label']}');
-
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ScreenActivityTimer(
-          selectedLabel: options[index]['label'],
-        ),
+        builder: (_) => Weather_condition_picker(selectedLabel: options[index]['label']),
       ),
     );
+  }
+
+  IconData _getWeatherConditionIcon(WeatherConditionType type) {
+    switch (type) {
+      case WeatherConditionType.ringWhenMatch:
+        return Icons.alarm;
+      case WeatherConditionType.cancelWhenMatch:
+        return Icons.alarm_off;
+      case WeatherConditionType.ringWhenDifferent:
+        return Icons.alarm_on;
+      case WeatherConditionType.cancelWhenDifferent:
+        return Icons.cancel;
+      default:
+        return Icons.cloud;
+    }
   }
 
   @override
@@ -78,28 +64,26 @@ class _ScreenActivityState extends State<ScreenActivity> {
       body: SafeArea(
         child: Column(
           children: [
-            SizedBox(height: isRound ? 10 : 8),
+            SizedBox(height: isRound ? 12 : 10),
             Text(
-              'Screen Activity',
+              'Weather Condition',
               style: TextStyle(
-                fontSize: isRound ? 12 : 14,
+                fontSize: isRound ? 12 : 15,
                 fontWeight: FontWeight.normal,
                 color: uac_colors.AppColors.green,
               ),
             ),
-            const SizedBox(height: 8), // reduced gap
+            const SizedBox(height: 8),
             Expanded(
               child: ListView.builder(
                 padding: EdgeInsets.only(
                   top: isRound ? 6 : 8,
-                  bottom:
-                      isRound ? 40 : 8, // <-- extra bottom padding for round
+                  bottom: isRound ? 40 : 8, // extra space for round watches
                   left: isRound ? 10 : 14,
                   right: isRound ? 10 : 14,
                 ),
                 itemCount: options.length,
-                itemBuilder: (context, i) => _buildActivityButton(
-                  context,
+                itemBuilder: (context, i) => _buildWeatherButton(
                   options[i]['label'],
                   options[i]['type'],
                   i,
@@ -113,17 +97,16 @@ class _ScreenActivityState extends State<ScreenActivity> {
     );
   }
 
-  Widget _buildActivityButton(
-    BuildContext context,
+  Widget _buildWeatherButton(
     String label,
-    ActivityConditionType type,
+    WeatherConditionType type,
     int index,
     bool isRound,
   ) {
     final bool isSelected = selectedIndex == index;
 
     return GestureDetector(
-      onTap: () => _onSelect(index, context),
+      onTap: () => _onSelect(index),
       child: Container(
         margin: EdgeInsets.symmetric(vertical: isRound ? 4 : 6),
         padding: EdgeInsets.symmetric(
@@ -132,7 +115,7 @@ class _ScreenActivityState extends State<ScreenActivity> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? uac_colors.AppColors.green.withOpacity(0.2) // ✅ highlight
+              ? uac_colors.AppColors.green.withOpacity(0.2)
               : uac_colors.AppColors.grayBlack,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -141,7 +124,7 @@ class _ScreenActivityState extends State<ScreenActivity> {
               isRound ? MainAxisAlignment.center : MainAxisAlignment.start,
           children: [
             Icon(
-              _getActivityConditionIcon(type),
+              _getWeatherConditionIcon(type),
               size: isRound ? 16 : 18,
               color: isSelected ? uac_colors.AppColors.green : Colors.white,
             ),
@@ -152,8 +135,7 @@ class _ScreenActivityState extends State<ScreenActivity> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize:
-                      isSelected ? (isRound ? 13 : 15) : (isRound ? 12 : 14),
+                  fontSize: isSelected ? (isRound ? 13 : 15) : (isRound ? 12 : 14),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   color: isSelected ? uac_colors.AppColors.green : Colors.white,
                 ),

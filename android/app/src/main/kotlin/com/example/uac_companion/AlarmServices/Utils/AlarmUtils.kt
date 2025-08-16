@@ -56,6 +56,7 @@ object AlarmUtils {
             val isEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_enabled"))
             val isOneTime = cursor.getInt(cursor.getColumnIndexOrThrow("is_one_time"))
             val fromWatch = cursor.getInt(cursor.getColumnIndexOrThrow("from_watch")) == 1
+            val watchId = cursor.getInt(cursor.getColumnIndexOrThrow("watch_id"))
             
             val isActivityEnabled = cursor.getInt(cursor.getColumnIndex("is_activity_enabled")) == 1
             val activityInterval = cursor.getInt(cursor.getColumnIndex("activity_interval"))
@@ -86,6 +87,7 @@ object AlarmUtils {
                             isEnabled,
                             isOneTime,
                             fromWatch,
+                            watchId,
 
                             isActivityEnabled,
                             activityInterval,

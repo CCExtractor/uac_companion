@@ -11,6 +11,8 @@ data class Alarm(
     val isEnabled: Int,
     val isOneTime: Int,
     val fromWatch: Boolean,
+    // val phoneId: String?,
+    val watchId: Int,
 
     // Screen Activity
     val isActivityEnabled: Boolean = false,

@@ -9,6 +9,8 @@ data class MinimalAlarmDTO(
     val isEnabled: Boolean,
     val isOneTime: Int,
     val fromWatch: Boolean,
+    // val phoneId: String,
+    val watchId: Int,
 
     // Screen Activity
     val isActivityEnabled: Boolean,
@@ -40,6 +42,8 @@ data class MinimalAlarmDTO(
                 isEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_enabled")) == 1,
                 isOneTime = cursor.getInt(cursor.getColumnIndexOrThrow("is_one_time")),
                 fromWatch = cursor.getInt(cursor.getColumnIndexOrThrow("from_watch")) == 1,
+                // phoneId = cursor.getString(cursor.getColumnIndex("phone_id")),
+                watchId = cursor.getInt(cursor.getColumnIndexOrThrow("watch_id")),
 
                 // Screen Activity
                 isActivityEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_activity_enabled")) == 1,

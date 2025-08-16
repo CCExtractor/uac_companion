@@ -16,15 +16,19 @@ class SmartControlsController extends GetxController {
     }
   }
 
+  void toggleWeatherCondition(bool value) {
+    isWeatherConditionOn.value = value;
+    debugPrint("toggleWeatherCondition -> $value");
+    if (value == true) {
+      Get.toNamed(AppRoutes.weatherCondition);
+    }
+  }
+
   void toggleGuardianAngel(bool value) {
     isGuardianAngelOn.value = value;
     debugPrint("toggleGuardianAngel -> $value");
   }
 
-  void toggleWeatherCondition(bool value) {
-    isWeatherConditionOn.value = value;
-    debugPrint("toggleWeatherCondition -> $value");
-  }
 
   void toggleLocationBased(bool value) {
     isLocationConditionOn.value = value;

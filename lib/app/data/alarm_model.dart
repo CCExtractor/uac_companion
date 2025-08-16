@@ -1,5 +1,6 @@
 class Alarm {
-  int? id;
+  int? id; // local DB primary key
+  final int? watchId;
   final String time;
   final List<int> days;
   final bool isEnabled;
@@ -29,6 +30,7 @@ class Alarm {
 
   Alarm({
     this.id,
+    this.watchId,
     required this.time,
     required this.days,
     required this.isEnabled,
@@ -51,6 +53,7 @@ class Alarm {
 
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
+        'watch_id': watchId,
         'time': time,
         'days': days.join(','),
         'is_enabled': isEnabled ? 1 : 0,
@@ -80,40 +83,37 @@ class Alarm {
       };
 
   @override
-  String toString() => 'Alarm(id: $id, time: $time, days: $days, '
+  String toString() => 'Alarm(id: $id, watchId: $watchId, time: $time, days: $days, '
       'isEnabled: $isEnabled, isOneTime: $isOneTime, fromWatch: $fromWatch, '
       'isActivityEnabled: $isActivityEnabled, activityInterval: $activityInterval, activityConditionType: $activityConditionType, '
       'isGuardian: $isGuardian, guardian: $guardian, guardianTimer: $guardianTimer, isCall: $isCall, '
       'isWeatherEnabled: $isWeatherEnabled, weatherConditionType: $weatherConditionType, weatherTypes: $weatherTypes, '
       'isLocationEnabled: $isLocationEnabled, location: $location, locationConditionType: $locationConditionType)';
-
 }
 
 Alarm alarmFromMap(Map<String, dynamic> map) {
   final rawDays = map['days'];
-  List<int> parsedDays = [];
-  if (rawDays is String && rawDays.isNotEmpty) {
-    parsedDays = rawDays
-        .split(',')
-        .map((s) => int.tryParse(s.trim()))
-        .where((e) => e != null)
-        .map((e) => e!)
-        .toList();
-  }
+  final parsedDays = (rawDays is String && rawDays.isNotEmpty)
+      ? rawDays
+          .split(',')
+          .map((s) => int.tryParse(s.trim()))
+          .whereType<int>()
+          .toList()
+      : <int>[];
 
   final rawWeatherTypes = map['weather_types'];
-  List<int> parsedWeatherTypes = [];
-  if (rawWeatherTypes is String && rawWeatherTypes.isNotEmpty) {
-    parsedWeatherTypes = rawWeatherTypes
-        .split(',')
-        .map((s) => int.tryParse(s.trim()))
-        .where((e) => e != null)
-        .map((e) => e!)
-        .toList();
-  }
+  final parsedWeatherTypes = (rawWeatherTypes is String && rawWeatherTypes.isNotEmpty)
+      ? rawWeatherTypes
+          .split(',')
+          .map((s) => int.tryParse(s.trim()))
+          .whereType<int>()
+          .toList()
+      : <int>[];
 
   return Alarm(
     id: map['id'],
+    // phoneId: map['phone_id'] ?? null, // fallback to '' if missing for old rows
+    watchId: map['watch_id'],
     time: map['time'],
     days: parsedDays,
     isEnabled: (map['is_enabled'] ?? 0) == 1,

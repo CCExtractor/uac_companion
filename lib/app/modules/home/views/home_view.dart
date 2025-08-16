@@ -120,7 +120,7 @@ class HomeView extends StatelessWidget {
                               scale: isRound ? 0.7 : 0.8,
                               child: Switch(
                                 value: alarm.isEnabled,
-                                onChanged: (_) => HomeController.to.toggleAlarm(alarm.id!),
+                                onChanged: (_) => HomeController.to.toggleAlarm(alarm.watchId!),
                                 activeColor: AppColors.green,
                                 inactiveThumbColor: Colors.grey,
                                 inactiveTrackColor: Colors.black26,

@@ -18,7 +18,8 @@ class MyApp extends StatelessWidget {
         WatchShapeService.init(context);
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
-          initialRoute: AppRoutes.home,
+          // initialRoute: AppRoutes.home,
+          initialRoute: AppRoutes.locationPicker,
           getPages: AppPages.routes,
         );
       },

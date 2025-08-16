@@ -44,6 +44,7 @@ class DBHelper {
       is_enabled INTEGER NOT NULL,
       is_one_time INTEGER NOT NULL DEFAULT 1,
       from_watch INTEGER NOT NULL DEFAULT 1,
+      watch_id INTEGER NOT NULL DEFAULT -1,
 
       -- Screen Activity
       is_activity_enabled INTEGER NOT NULL DEFAULT 0,
@@ -95,20 +96,24 @@ class AlarmDBService {
     final rawId = await DBHelper.instance.insert(_table, map);
 
     //** Offset to avoid ID conflict with phone-side alarms
-    var offsetId = rawId;
-    if (rawId == 1) {
-      offsetId = rawId + 10000;
-    }
+    var offsetId = rawId + 100000;
 
-    await DBHelper.instance.update(_table, {'id': offsetId}, rawId);
+    // await DBHelper.instance.update(_table, {'id': offsetId}, rawId);
+    await DBHelper.instance.update(
+      _table,
+      {'id': rawId, 'watch_id': offsetId},
+      rawId,
+    );
+
 
     return Alarm(
-      id: offsetId,
+      id: rawId,
       time: alarm.time,
       days: alarm.days,
       isEnabled: alarm.isEnabled,
       isOneTime: alarm.isOneTime,
       fromWatch: alarm.fromWatch,
+      watchId: offsetId,
 
       isActivityEnabled: alarm.isActivityEnabled,
       activityInterval: alarm.activityInterval,

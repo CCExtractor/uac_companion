@@ -9,7 +9,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import android.os.Handler
 import android.os.Looper
-import com.ccextractor.uac_companion.communication.data.AlarmModelReceived
+// import com.ccextractor.uac_companion.communication.data.AlarmModelReceived
 import com.ccextractor.uac_companion.AlarmScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +53,8 @@ class UACDataLayerListenerService : WearableListenerService() {
                 //! Alarm receiving PATH
                 path == PATH_ALARM_PHONE_TO_WATCH -> {
                     val alarmJsonRaw = dataMap.getString("alarm_json")
-                    Log.d(TAG, "Received alarm_json from phone: $alarmJsonRaw")
+                    val phoneId = dataMap.getInt("watchId")
+                    Log.d(TAG, "Received alarm_json from phone: $alarmJsonRaw, for watchId: $phoneId")
                     if (alarmJsonRaw != null) {
                         // AlarmDbHelper().insertAlarmFromJson(this, alarmJsonRaw)
                         AlarmDBService(this).insertAlarmFromJson(this, alarmJsonRaw)

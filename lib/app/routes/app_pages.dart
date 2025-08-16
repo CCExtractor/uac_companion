@@ -1,7 +1,11 @@
 import 'package:get/get.dart';
 import 'package:uac_companion/app/modules/more/bindings/more_settings_bindings.dart';
+import 'package:uac_companion/app/modules/smart_control/views/location_picker.dart';
 import 'package:uac_companion/app/modules/smart_control/views/screen_activity.dart';
+import 'package:uac_companion/app/modules/smart_control/views/screen_activity_timer.dart';
 import 'package:uac_companion/app/modules/smart_control/views/smart_control.dart';
+import 'package:uac_companion/app/modules/smart_control/views/wather_condition.dart';
+import 'package:uac_companion/app/modules/smart_control/views/weather_condition_picker.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/alarm_setup/views/alarm_setup_view.dart';
@@ -27,16 +31,28 @@ class AppPages {
       binding: MoreSettingsBinding(),
     ),
     GetPage(
-      name:  AppRoutes.screenActivity,
-      page: () => const ScreenActivityDetailScreen(),
-    ),
-    GetPage(
       name:  AppRoutes.smartcontrol,
       page: () => const SmartControlsScreen(),
     ),
-    // GetPage(
-    //   name:  AppRoutes.screenActivity(),
-    //   page: () => const ScreenActivityDetailScreen(),
-    // )
+    GetPage(
+      name:  AppRoutes.screenActivity,
+      page: () => const ScreenActivity(),
+    ),
+    GetPage(
+      name:  AppRoutes.screenActivityTimer,
+      page: () => const ScreenActivityTimer(selectedLabel: '',),
+    ),
+    GetPage(
+      name:  AppRoutes.weatherCondition,
+      page: () => const WeatherConditionScreen(),
+    ),
+    GetPage(
+      name:  AppRoutes.weatherSelector,
+      page: () => const Weather_condition_picker(selectedLabel: '',),
+    ),
+    GetPage(
+      name: AppRoutes.locationPicker,
+      page: () => LocationPicker(),    
+    ),
   ];
 }

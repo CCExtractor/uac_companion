@@ -1,6 +1,7 @@
 package com.ccextractor.uac_companion.communication.data
 
 data class AlarmModelReceived(
+    //! isarId to hona chahiye
     val id: Int,
     val time: String,
     val days: List<Int>,

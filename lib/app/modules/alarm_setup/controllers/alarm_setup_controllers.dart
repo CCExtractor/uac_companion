@@ -67,6 +67,7 @@ class AlarmSetupControllers extends GetxController {
       days: androidDays,
       isEnabled: true,
       isOneTime: selectedDays.isEmpty ? 1 : 0,
+      watchId: alarmId,
       fromWatch: true,
       // default values for unimplemented features
       isLocationEnabled: false,
@@ -78,27 +79,30 @@ class AlarmSetupControllers extends GetxController {
     );
 
     debugPrint('flutter before insert/update: $alarm');
-
-    // final dbService = AlarmDBService();
-    // final finalAlarmId = alarmId != null
-    //     ? await dbService.updateAlarm(alarm).then((_) => alarm.id!)
-    //     : await dbService.insertNewAlarm(alarm);
     final dbService = AlarmDBService();
     int finalAlarmId;
+    int watchId;
 
     if (alarmId != null) {
       await dbService.updateAlarm(alarm);
       finalAlarmId = alarm.id!;
+      watchId = finalAlarmId;
     } else {
       final insertedAlarm = await dbService.insertNewAlarm(alarm);
       finalAlarmId = insertedAlarm.id!;
       alarmId = finalAlarmId;
+      watchId = finalAlarmId;
     }
     debugPrint("alarmID -> $finalAlarmId");
+    debugPrint("watchId -> $watchId");
+    //! Maybe need to send phonId in order to schedule the alarm for uniqueness
     await alarmChannel.invokeMethod('scheduleAlarm');
 
     final alarmMap = alarm.toMap();
+    var offsetId = finalAlarmId + 100000;
     alarmMap['id'] = finalAlarmId;
+    // alarmMap['phone_id'] = finalAlarmId.toString();
+    alarmMap['watch_id'] = offsetId;
     await syncChannel.invokeMethod('sendAlarmToPhone', alarmMap);
 
     Get.back(result: true);

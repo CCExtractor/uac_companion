@@ -18,6 +18,7 @@ import com.ccextractor.uac_companion.communication.parseAlarm
 import com.ccextractor.uac_companion.communication.UACDataLayerListenerService
 
 class MainActivity : FlutterActivity() {
+
     private val CHANNEL = "uac_alarm_channel"
     private val NATIVE_TO_FLUTTER = "uac_kotlin_to_flutter"
     private val ALARM_SYNC_CHANNEL = "uac_alarm_sync"
@@ -27,7 +28,8 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         checkAndRequestPermissions()
         UACDataLayerListenerService.flutterEngine = flutterEngine
-       
+
+        // Phone alarm scheduling / cancellation
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -37,8 +39,10 @@ class MainActivity : FlutterActivity() {
                     }
                     "cancelAlarm" -> {
                         val id = call.argument<Int>("id")
+                        val watchId = call.argument<Int>("watchId") ?: -1
+                        // val phoneId = call.argument<String>("phoneId") ?: ""
                         if (id != null) {
-                            AlarmScheduler.cancelAlarm(this, id)
+                            AlarmScheduler.cancelAlarm(this, watchId)
                             result.success(null)
                         } else {
                             result.error("INVALID_ID", "Alarm ID missing", null)
@@ -47,49 +51,67 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
-    
-        // Method channel for sending alarms to the phone from the watch
+
+        // Watch → Phone communication
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SYNC_CHANNEL)
             .setMethodCallHandler { call, result ->
-                if (call.method == "sendAlarmToPhone") {
-                    try {
-                        val args = call.arguments as Map<*, *>
-                        val alarm = parseAlarm(args)
-                        com.ccextractor.uac_companion.communication.WatchAlarmSender.sendAlarmToPhone(this, alarm)
-                        result.success("sent")
-                    } catch (e: Exception) {
-                        Log.e("UAC_WatchChannel", "Failed to parse/send alarm", e)
-                        result.error("error", "Invalid alarm data", null)
+                when (call.method) {
+                    "sendAlarmToPhone" -> {
+                        try {
+                            val args = call.arguments as Map<*, *>
+                            val alarm = parseAlarm(args)
+                            WatchAlarmSender.sendAlarmToPhone(this, alarm)
+                            result.success("sent")
+                        } catch (e: Exception) {
+                            Log.e("UAC_WatchChannel", "Failed to parse/send alarm", e)
+                            result.error("error", "Invalid alarm data", null)
+                        }
                     }
-                } else {
-                    result.notImplemented()
+                    "sendActionToPhone" -> {
+                        try {
+                            val action = call.argument<String>("action") ?: ""
+                            // val phoneId = call.argument<String>("phoneId") ?: ""
+                            val watchId = call.argument<Int>("watchId") ?: -1
+                            val alarmId = call.argument<Int>("id") ?: -1
+
+                            Log.d("MainActivityFile", "$action for watchId: $watchId and id: $alarmId")
+                            WatchAlarmSender.sendActionToPhone(this, action, watchId, alarmId)
+                            result.success("sent")
+                        } catch (e: Exception) {
+                            Log.e("UAC_WatchChannel", "Failed to send action", e)
+                            result.error("error", "Invalid action data", null)
+                        }
+                    }
+                    else -> result.notImplemented()
                 }
             }
-    }    
+    }
 
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-                            PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                        NOTIFICATION_PERMISSION_REQUEST_CODE
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_REQUEST_CODE
                 )
             }
         } else {
             requestExactAlarmPermissionIfNeeded()
         }
     }
+
     override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE &&
-                        grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+            grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
         ) {
             Log.d("Permission", "Notification permission granted")
             requestExactAlarmPermissionIfNeeded()
@@ -97,14 +119,14 @@ class MainActivity : FlutterActivity() {
             Log.e("Permission", "Notification permission denied")
         }
     }
+
     private fun requestExactAlarmPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {
-                val intent =
-                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
                 startActivity(intent)
             }
         }

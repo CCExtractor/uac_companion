@@ -7,6 +7,7 @@ import 'package:uac_companion/app/data/alarm_utils.dart';
 //* needed widgetsBindingObserver to make sure that the alarms are loaded when the app is resumed
 class HomeController extends GetxController with WidgetsBindingObserver {
   static HomeController get to => Get.find();
+  static const MethodChannel watchChannel = MethodChannel('uac_alarm_sync');
   var alarms = <Alarm>[].obs;
   static const platform = MethodChannel('uac_alarm_channel');
   final alarmService = AlarmDBService();
@@ -45,9 +46,10 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     alarms.assignAll(loadedAlarms);
   }
 
-  Future<void> toggleAlarm(int id) async {
+  //! phoneId ko add karna pad sakta h
+  Future<void> toggleAlarm(int watchId) async {
   final updatedAlarms = alarms.map((alarm) {
-    if (alarm.id == id) {
+    if (alarm.watchId == watchId) {
       final updated = Alarm(
         id: alarm.id,
         time: alarm.time,
@@ -55,6 +57,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         isEnabled: !alarm.isEnabled,
         isOneTime: alarm.isOneTime,
         fromWatch: alarm.fromWatch,
+        watchId: alarm.watchId,
         isLocationEnabled: false,
         location: '',
         isGuardian: false,
@@ -67,7 +70,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     return alarm;
   }).toList();
 
-  final updatedAlarm = updatedAlarms.firstWhere((a) => a.id == id);
+  final updatedAlarm = updatedAlarms.firstWhere((a) => a.watchId == watchId);
   alarms.assignAll(updatedAlarms);
   await alarmService.updateAlarm(updatedAlarm);
   debugPrint('HomeController -> Alarm toggled: $updatedAlarm');
@@ -76,10 +79,16 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     if (!updatedAlarm.isEnabled) {
       await platform.invokeMethod('cancelAlarm', {
         'id': updatedAlarm.id,
-        'days': updatedAlarm.days,
+        'watchId': updatedAlarm.watchId,
+        // 'phoneId': updatedAlarm.phoneId
       });
     }
     await platform.invokeMethod('scheduleAlarm');
+    await watchChannel.invokeMethod('sendActionToPhone', {
+        'action': "update", 
+        'watchId': updatedAlarm.watchId,
+        'id': updatedAlarm.id
+    });
     await loadAlarms();
   } catch (e) {
     debugPrint('HomeController -> Error toggling alarm: $e');
@@ -106,11 +115,17 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   try {
     await platform.invokeMethod('cancelAlarm', {
       'id': alarm.id,
+      'watchId': alarm.watchId
     });
     await alarmService.deleteAlarm(alarm.id!);
     alarms.removeWhere((a) => a.id == alarm.id);
     await platform.invokeMethod('scheduleAlarm');
     await loadAlarms();
+    await watchChannel.invokeMethod('sendActionToPhone', {
+        'action': "delete", 
+        'watchId': alarm.watchId,
+        'id': alarm.id
+      });
   } catch (e) {
     debugPrint('HomeController -> Alarm delete/cancel failed: $e');
   }
