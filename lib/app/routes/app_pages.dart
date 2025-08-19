@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
 import 'package:uac_companion/app/modules/more/bindings/more_settings_bindings.dart';
-import 'package:uac_companion/app/modules/smart_control/views/location_picker.dart';
-import 'package:uac_companion/app/modules/smart_control/views/screen_activity.dart';
-import 'package:uac_companion/app/modules/smart_control/views/screen_activity_timer.dart';
-import 'package:uac_companion/app/modules/smart_control/views/smart_control.dart';
-import 'package:uac_companion/app/modules/smart_control/views/wather_condition.dart';
-import 'package:uac_companion/app/modules/smart_control/views/weather_condition_picker.dart';
+import 'package:uac_companion/app/modules/smart_control/bindings/smart_controls_bindings.dart';
+import 'package:uac_companion/app/modules/smart_control/views/gaurdian_angel/gaurdian_angel_view.dart';
+import 'package:uac_companion/app/modules/smart_control/views/location/location_condition_view.dart';
+import 'package:uac_companion/app/modules/smart_control/views/location/location_picker_view.dart';
+import 'package:uac_companion/app/modules/smart_control/views/screen_activity/screen_activity_view.dart';
+import 'package:uac_companion/app/modules/smart_control/views/screen_activity/screen_activity_timer.dart';
+import 'package:uac_companion/app/modules/smart_control/views/smart_control_view.dart';
+import 'package:uac_companion/app/modules/smart_control/views/weather/wather_condition_view.dart';
+import 'package:uac_companion/app/modules/smart_control/views/weather/weather_condition_picker.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/alarm_setup/views/alarm_setup_view.dart';
@@ -30,29 +33,53 @@ class AppPages {
       page: () => const MoreSettingsView(),
       binding: MoreSettingsBinding(),
     ),
+    //! smart controls
     GetPage(
-      name:  AppRoutes.smartcontrol,
+      name: AppRoutes.smartcontrol,
       page: () => const SmartControlsScreen(),
+      binding: SmartControlBinding(),
+    ),
+    //! screen conditions
+    GetPage(
+      name: AppRoutes.screenActivity,
+      page: () => ScreenActivity(),
+      binding: SmartControlBinding(),
     ),
     GetPage(
-      name:  AppRoutes.screenActivity,
-      page: () => const ScreenActivity(),
+      name: AppRoutes.screenActivityTimer,
+      page: () => ScreenActivityTimer(
+        selectedLabel: Get.arguments ?? '',
+      ),
+      binding: SmartControlBinding(),
+    ),
+    //! weather conditions
+    GetPage(
+      name: AppRoutes.weatherCondition,
+      page: () => WeatherConditionScreen(),
+      binding: SmartControlBinding(),
     ),
     GetPage(
-      name:  AppRoutes.screenActivityTimer,
-      page: () => const ScreenActivityTimer(selectedLabel: '',),
+      name: AppRoutes.weatherSelector,
+      page: () => WeatherConditionPicker(
+        selectedLabel: '',
+      ),
+      binding: SmartControlBinding(),
     ),
+    //! location conditions
     GetPage(
-      name:  AppRoutes.weatherCondition,
-      page: () => const WeatherConditionScreen(),
-    ),
-    GetPage(
-      name:  AppRoutes.weatherSelector,
-      page: () => const Weather_condition_picker(selectedLabel: '',),
+      name: AppRoutes.locationConditionScreen,
+      page: () => LocationConditionScreen(),
+      binding: SmartControlBinding(),
     ),
     GetPage(
       name: AppRoutes.locationPicker,
-      page: () => LocationPicker(),    
+      page: () => const LocationPickerScreen(),
+    ),
+    //! gaurdian angel
+    GetPage(
+        name: AppRoutes.gaurdianAngelScreen,
+        page: () => const GaurdianAngelScreen(),
+        binding: SmartControlBinding(),
     ),
   ];
 }

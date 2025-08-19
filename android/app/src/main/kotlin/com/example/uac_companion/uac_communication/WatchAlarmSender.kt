@@ -37,18 +37,18 @@ object WatchAlarmSender {
                 .addOnFailureListener { e -> Log.e(TAG, "Alarm sync failed via DataClient", e) }
     }
 
-    fun sendActionToPhone(context: Context, action: String, watchId: Int, id: Int) {
+    fun sendActionToPhone(context: Context, action: String, uniqueSyncId: String, id: Int) {
         val timestamp = System.currentTimeMillis()
         // val path = PATH_ALARM_WATCH_TO_PHONE
     
-        Log.d(TAG, "Sending action to phone: $action for id: $id for watchId: $watchId")
+        Log.d(TAG, "Sending action to phone: $action for id: $id for uniqueSyncId: $uniqueSyncId")
     
         val putDataMapRequest = PutDataMapRequest.create(PATH_ACTION_WATCH_TO_PHONE)
         val dataMap = putDataMapRequest.dataMap
     
         // FIX: match keys used on receiving side
         dataMap.putString("action", action)
-        dataMap.putInt("watchId", watchId)
+        dataMap.putString("uniqueSyncId", uniqueSyncId)
         dataMap.putInt("id", id)
         dataMap.putLong("timestamp", timestamp)
     

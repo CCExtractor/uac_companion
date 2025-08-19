@@ -5,24 +5,25 @@ import android.content.*
 import android.os.Build
 import android.util.Log
 import com.ccextractor.uac_companion.communication.WatchAlarmSender
+import kotlin.math.abs
 
 class AlarmSnoozeReceiver : BroadcastReceiver() {
     final val TAG = "AlarmSnoozeReceiver"
 //!need fixes alarm snoozes but with warning - W/Ringtone: Neither local nor remote playback available that makes the alarm to ring after 5 min but the alrm do not ring
     override fun onReceive(context: Context, intent: Intent) {
         val alarmId = intent.getIntExtra("alarmId", -1)
-        val watchId = intent.getIntExtra("watchId", -1)
+         val uniqueSyncId = intent.getStringExtra("uniqueSyncId") ?: ""
         val hour = intent.getIntExtra("hour", -1)
         val minute = intent.getIntExtra("minute", -1)
         // val isSnoozed = intent.getBooleanExtra("isSnoozed", false)        
         val fromPhone = intent.getBooleanExtra("fromPhone", false) ?: false
-        Log.d(TAG, "received intents: $alarmId, $watchId, ")
+        Log.d(TAG, "received intents: $alarmId, $uniqueSyncId, ")
 
         if (!fromPhone) {
-            WatchAlarmSender.sendActionToPhone(context, "snooze", watchId, alarmId)
+            WatchAlarmSender.sendActionToPhone(context, "snooze", uniqueSyncId, alarmId)
         }
 
-        Log.d(TAG, "Snoozing alarmId=$alarmId & watchId: $watchId for +5 minute...")
+        Log.d(TAG, "Snoozing alarmId=$alarmId & uniqueSyncId: $uniqueSyncId for +5 minute...")
 
         // Stop current sound/vibration/notification
         AlarmServiceHolder.ringtone?.stop()
@@ -37,13 +38,13 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
 
         val snoozeIntent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
             putExtra("alarmId", alarmId)
-            putExtra("watchId", watchId)
+            putExtra("uniqueSyncId", uniqueSyncId)
             putExtra("hour", hour)
             putExtra("minute", minute)
             putExtra("isSnoozed", true)
-            action = "com.ccextractor.uac_companion.ALARM_TRIGGERED_$watchId"
+            action = "com.ccextractor.uac_companion.ALARM_TRIGGERED_$uniqueSyncId"
         }
-        val snoozeRequestCode = (watchId % 32767) + 1000000
+        val snoozeRequestCode = abs(uniqueSyncId.hashCode()) + 1
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,
             // alarmId, // Same ID, reused for snooze

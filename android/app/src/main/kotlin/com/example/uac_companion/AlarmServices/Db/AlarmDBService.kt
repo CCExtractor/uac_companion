@@ -15,7 +15,7 @@ class AlarmDBService(context: Context) {
     fun insertAlarmFromJson(context: Context, jsonString: String): Long {
         try {
             val json = JSONObject(jsonString)
-            val watchId = json.getString("watchId")
+            val uniqueSyncId = json.getString("uniqueSyncId")
             val id = json.getString("alarmID").hashCode()
             val time = json.getString("alarmTime")
             val rawDays = json.get("days")
@@ -33,8 +33,7 @@ class AlarmDBService(context: Context) {
                 put("is_enabled", json.optInt("isEnabled", 1))
                 put("is_one_time", json.optInt("isOneTime", if (days.isEmpty()) 1 else 0))
                 put("from_watch", 0)
-                // put("phone_id", phoneId)
-                put("watch_id", watchId)
+                put("unique_sync_id", uniqueSyncId)
 
                 // Screen Activity
                 put("is_activity_enabled", json.optInt("isActivityEnabled", 0))
@@ -77,8 +76,7 @@ class AlarmDBService(context: Context) {
             put("is_enabled", if (alarm.isEnabled) 1 else 0)
             put("is_one_time", alarm.isOneTime)
             put("from_watch", if (alarm.fromWatch) 1 else 0)
-            // put("phone_id", alarm.phoneId)
-            put("watch_id", alarm.watchId)
+            put("unique_sync_id", alarm.uniqueSyncId)
 
             // Screen Activity
             put("is_activity_enabled", if (alarm.isActivityEnabled) 1 else 0)
@@ -128,7 +126,7 @@ class AlarmDBService(context: Context) {
             put("is_enabled", if (alarm.isEnabled) 1 else 0)
             put("is_one_time", alarm.isOneTime)
             put("from_watch", if (alarm.fromWatch) 1 else 0)
-            put("watch_id", alarm.watchId)
+            put("unique_sync_id", alarm.uniqueSyncId)
 
             // Screen Activity
             put("is_activity_enabled", if (alarm.isActivityEnabled) 1 else 0)
@@ -157,8 +155,8 @@ class AlarmDBService(context: Context) {
     }
 
     //! doubt
-    fun deleteAlarm(watchId: Int): Int {
+    fun deleteAlarm(uniqueSyncId: String): Int {
         val db = dbHelper.writableDatabase
-        return db.delete("alarms", "watch_id = ?", arrayOf(watchId.toString()))
+        return db.delete("alarms", "unique_sync_id = ?", arrayOf(uniqueSyncId))
     }
 }

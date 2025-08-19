@@ -2,17 +2,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uac_companion/app/modules/more/view/more_settings_view.dart';
+import 'package:uac_companion/app/routes/app_routes.dart';
 import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
-import 'package:uac_companion/app/utils/watch_shape_service.dart' as watch_shape;
+import 'package:uac_companion/app/utils/watch_shape_service.dart'
+    as watch_shape;
 import '../controllers/alarm_setup_controllers.dart';
-import '../../smart_control/views/smart_control.dart';
 
 class AlarmSetupView extends StatelessWidget {
   const AlarmSetupView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // final controller = Get.find<AlarmSetupControllers>();
     final isRound = watch_shape.WatchShapeService.isRound;
 
     return Scaffold(
@@ -71,17 +71,55 @@ class AlarmSetupView extends StatelessWidget {
                       children: [
                         _buildIconButton(0, Icons.more_vert, () async {
                           // final result =await Get.toNamed(AppRoutes.moreSettings);
-                          final result = await Get.to(() => const MoreSettingsView(),arguments: AlarmSetupControllers.to.selectedDays,);
+                          final result = await Get.to(
+                            () => const MoreSettingsView(),
+                            arguments: AlarmSetupControllers.to.selectedDays,
+                          );
                           if (result is List<int>) {
-                            AlarmSetupControllers.to.selectedDays.value = result;
+                            AlarmSetupControllers.to.selectedDays.value =
+                                result;
                           }
-                        }, AlarmSetupControllers.to.selectedIconIndex.value == 0),
+                        },
+                            AlarmSetupControllers.to.selectedIconIndex.value ==
+                                0),
                         _buildIconButton(1, Icons.check, () {
                           AlarmSetupControllers.to.confirmTime();
-                        }, AlarmSetupControllers.to.selectedIconIndex.value == 1),
-                        _buildIconButton(2, Icons.notifications_active, () {
-                          Get.to(() => const SmartControlsScreen());
-                        }, AlarmSetupControllers.to.selectedIconIndex.value == 2),
+                        },
+                            AlarmSetupControllers.to.selectedIconIndex.value ==
+                                1),
+                        _buildIconButton(2, Icons.notifications_active,
+                            () async {
+                          final controller = AlarmSetupControllers.to;
+
+                          final argumentsToSend = {
+                            'isWeatherEnabled':
+                                controller.isWeatherEnabled.value,
+                            'weatherConditionType':
+                                controller.weatherConditionType.value,
+                            'weatherSelected': controller.weatherTypes,
+                            'isLocationEnabled':
+                                controller.isLocationEnabled.value,
+                            'locationConditionType':
+                                controller.locationConditionType.value,
+                            'location': controller.location.value,
+                            'isActivityEnabled':
+                                controller.isActivityEnabled.value,
+                            'activityConditionType':
+                                controller.activityConditionType.value,
+                            'activityInterval':
+                                controller.activityInterval.value,
+                            'isGuardian': controller.isGuardian.value,
+                            'guardian': controller.guardian.value,
+                            'guardianTimer': controller.guardianTimer.value,
+                            'isCall': controller.isCall.value,
+                          };
+                          final result = await Get.toNamed(
+                            AppRoutes.smartcontrol,
+                            arguments: argumentsToSend,
+                          );
+                        },
+                            AlarmSetupControllers.to.selectedIconIndex.value ==
+                                2),
                       ],
                     )),
               ],
@@ -123,7 +161,9 @@ class AlarmSetupView extends StatelessWidget {
                   style: TextStyle(
                     fontSize:
                         isSelected ? (isRound ? 25 : 30) : (isRound ? 20 : 20),
-                    color: isSelected ? uac_colors.AppColors.green : uac_colors.AppColors.notSeleted,
+                    color: isSelected
+                        ? uac_colors.AppColors.green
+                        : uac_colors.AppColors.notSeleted,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -165,7 +205,9 @@ class AlarmSetupView extends StatelessWidget {
                   style: TextStyle(
                     fontSize:
                         isSelected ? (isRound ? 23 : 25) : (isRound ? 20 : 20),
-                    color: isSelected ? uac_colors.AppColors.green : uac_colors.AppColors.notSeleted,
+                    color: isSelected
+                        ? uac_colors.AppColors.green
+                        : uac_colors.AppColors.notSeleted,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -192,7 +234,9 @@ class AlarmSetupView extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(isRound ? 5 : 8),
           decoration: BoxDecoration(
-            color: isSelected ? uac_colors.AppColors.green : uac_colors.AppColors.grayBlack,
+            color: isSelected
+                ? uac_colors.AppColors.green
+                : uac_colors.AppColors.grayBlack,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -206,7 +250,9 @@ class AlarmSetupView extends StatelessWidget {
           child: Icon(
             icon,
             size: 24,
-            color: isSelected ? uac_colors.AppColors.background : const Color(0xB3FFFFFF),
+            color: isSelected
+                ? uac_colors.AppColors.background
+                : const Color(0xB3FFFFFF),
           ),
         ),
       ),

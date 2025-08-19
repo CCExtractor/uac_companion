@@ -23,6 +23,7 @@ class MainActivity : FlutterActivity() {
     private val NATIVE_TO_FLUTTER = "uac_kotlin_to_flutter"
     private val ALARM_SYNC_CHANNEL = "uac_alarm_sync"
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
+    private val ALL_PERMISSIONS_REQUEST_CODE = 1001
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -39,10 +40,9 @@ class MainActivity : FlutterActivity() {
                     }
                     "cancelAlarm" -> {
                         val id = call.argument<Int>("id")
-                        val watchId = call.argument<Int>("watchId") ?: -1
-                        // val phoneId = call.argument<String>("phoneId") ?: ""
+                        val uniqueSyncId = call.argument<String>("uniqueSyncId") ?: ""
                         if (id != null) {
-                            AlarmScheduler.cancelAlarm(this, watchId)
+                            AlarmScheduler.cancelAlarm(this, uniqueSyncId)
                             result.success(null)
                         } else {
                             result.error("INVALID_ID", "Alarm ID missing", null)
@@ -70,12 +70,11 @@ class MainActivity : FlutterActivity() {
                     "sendActionToPhone" -> {
                         try {
                             val action = call.argument<String>("action") ?: ""
-                            // val phoneId = call.argument<String>("phoneId") ?: ""
-                            val watchId = call.argument<Int>("watchId") ?: -1
+                             val uniqueSyncId = call.argument<String>("uniqueSyncId") ?: ""
                             val alarmId = call.argument<Int>("id") ?: -1
 
-                            Log.d("MainActivityFile", "$action for watchId: $watchId and id: $alarmId")
-                            WatchAlarmSender.sendActionToPhone(this, action, watchId, alarmId)
+                            Log.d("MainActivityFile", "$action for uniqueSyncId: $uniqueSyncId and id: $alarmId")
+                            WatchAlarmSender.sendActionToPhone(this, action, uniqueSyncId, alarmId)
                             result.success("sent")
                         } catch (e: Exception) {
                             Log.e("UAC_WatchChannel", "Failed to send action", e)
@@ -88,38 +87,39 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun checkAndRequestPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    NOTIFICATION_PERMISSION_REQUEST_CODE
-                )
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), ALL_PERMISSIONS_REQUEST_CODE)
         } else {
             requestExactAlarmPermissionIfNeeded()
         }
     }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE &&
-            grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.d("Permission", "Notification permission granted")
-            requestExactAlarmPermissionIfNeeded()
-        } else {
-            Log.e("Permission", "Notification permission denied")
+        if (requestCode == ALL_PERMISSIONS_REQUEST_CODE) {
+            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                Log.d("Permission", "All required permissions granted")
+                requestExactAlarmPermissionIfNeeded()
+            } else {
+                Log.e("Permission", "One or more permissions were denied")
+            }
         }
     }
-
     private fun requestExactAlarmPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)

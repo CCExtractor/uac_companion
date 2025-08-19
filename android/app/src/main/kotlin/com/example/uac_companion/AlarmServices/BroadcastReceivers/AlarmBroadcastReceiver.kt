@@ -7,6 +7,7 @@ import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.ccextractor.uac_companion.data.AlarmDbModel
+import kotlin.math.abs
 
 object AlarmServiceHolder {
     var ringtone: Ringtone? = null
@@ -24,27 +25,20 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "Alarm triggered!")
         val alarmId = intent.getIntExtra("alarmId", -1)
-        val watchId = intent.getIntExtra("watchId", -1)
+        val uniqueSyncId = intent.getStringExtra("uniqueSyncId") ?: ""
         val hour = intent.getIntExtra("hour", 0)
         val minute = intent.getIntExtra("minute", 0)
-        Log.d(TAG, "received intents: $alarmId, $watchId, ")
+        Log.d(TAG, "received intents: $alarmId, $uniqueSyncId, ")
 
-        // Disable one-time alarm directly
-        // if (intent.getStringExtra("days").isNullOrEmpty()) {
-        //     val db = AlarmDbModel(context).writableDatabase
-        //     db.execSQL("UPDATE alarms SET enabled = 0 WHERE id = ?", arrayOf(alarmId.toString()))
-        //     db.close()
-        //     Log.d("UAC_Comp-AlarmBroadcastReceiver", "Disabled one-time alarm ID=$alarmId")
-        // }
         val isSnoozed = intent.getBooleanExtra("isSnoozed", false)
         val daysString = intent.getStringExtra("days") ?: ""
         val isOnceAlarm = daysString.split(",").map { it.trim() }.filter { it.isNotEmpty() }.isEmpty()
 
         if (isOnceAlarm && !isSnoozed) {
             val db = AlarmDbModel(context).writableDatabase
-            db.execSQL("UPDATE alarms SET is_enabled = 0 WHERE watch_id = ?", arrayOf(watchId.toString()))
+            db.execSQL("UPDATE alarms SET is_enabled = 0 WHERE unique_sync_id = ?", arrayOf(uniqueSyncId))
             db.close()
-            Log.d(TAG, "Disabled one-time watchId=$watchId and alarmId=$alarmId")
+            Log.d(TAG, "Disabled one-time uniqueSyncId=$uniqueSyncId and alarmId=$alarmId")
         } else if (isSnoozed) {
             Log.d(TAG, "Snoozed alarm — skipping disable.")
         }
@@ -92,27 +86,27 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         AlarmServiceHolder.vibrator = vibrator
 
         // Dismiss Intent
+        val dismissRequestCode = abs(uniqueSyncId.hashCode())
         val dismissIntent =
                 Intent(context, AlarmDismissReceiver::class.java).apply {
                     // action = "com.ccextractor.uac_companion.ALARM_DISMISS_$alarmId"
-                    action = "com.ccextractor.uac_companion.ALARM_DISMISS_$watchId"
+                    action = "com.ccextractor.uac_companion.ALARM_DISMISS_$uniqueSyncId"
                     putExtra("alarmId", alarmId)
-                    putExtra("watchId", watchId)
+                    putExtra("uniqueSyncId", uniqueSyncId)
                 }
-        val dismissPendingIntent =
-                PendingIntent.getBroadcast(
-                        context,
-                        // alarmId,
-                        watchId,
-                        dismissIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+        val dismissPendingIntent = PendingIntent.getBroadcast(
+            context,
+            dismissRequestCode,
+            dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         // Snooze Intent
+        val snoozeRequestCode = abs(uniqueSyncId.hashCode()) + 1
         val snoozeIntent =
                 Intent(context, AlarmSnoozeReceiver::class.java).apply {
                     putExtra("alarmId", alarmId)
-                    putExtra("watchId", watchId)
+                    putExtra("uniqueSyncId", uniqueSyncId)
                     putExtra("hour", hour)
                     putExtra("minute", minute)
                     putExtra("isSnoozed", true)
@@ -120,8 +114,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
         val snoozePendingIntent =
                 PendingIntent.getBroadcast(
                         context,
-                        // alarmId,
-                        watchId,
+                        snoozeRequestCode,
                         snoozeIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )

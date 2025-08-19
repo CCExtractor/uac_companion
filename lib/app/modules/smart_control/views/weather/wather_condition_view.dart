@@ -1,59 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:uac_companion/app/modules/smart_control/views/weather_condition_picker.dart';
+import 'package:get/get.dart';
+import 'package:uac_companion/app/modules/smart_control/controllers/weather_controller.dart';
 import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
-enum WeatherConditionType {
-  ringWhenMatch,
-  cancelWhenMatch,
-  ringWhenDifferent,
-  cancelWhenDifferent,
-}
+class WeatherConditionScreen extends StatelessWidget {
+  final WeatherConditionController controller = Get.put(WeatherConditionController());
 
-class WeatherConditionScreen extends StatefulWidget {
-  const WeatherConditionScreen({super.key});
-
-  @override
-  State<WeatherConditionScreen> createState() => _WeatherConditionScreenState();
-}
-
-class _WeatherConditionScreenState extends State<WeatherConditionScreen> {
-  int? selectedIndex;
-
-  final List<Map<String, dynamic>> options = [
-    {'label': 'Ring when Match', 'type': WeatherConditionType.ringWhenMatch},
-    {'label': 'Cancel when Match', 'type': WeatherConditionType.cancelWhenMatch},
-    {'label': 'Ring when Different', 'type': WeatherConditionType.ringWhenDifferent},
-    {'label': 'Cancel when Different', 'type': WeatherConditionType.cancelWhenDifferent},
-  ];
-
-  void _onSelect(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Weather_condition_picker(selectedLabel: options[index]['label']),
-      ),
-    );
-  }
-
-  IconData _getWeatherConditionIcon(WeatherConditionType type) {
-    switch (type) {
-      case WeatherConditionType.ringWhenMatch:
-        return Icons.alarm;
-      case WeatherConditionType.cancelWhenMatch:
-        return Icons.alarm_off;
-      case WeatherConditionType.ringWhenDifferent:
-        return Icons.alarm_on;
-      case WeatherConditionType.cancelWhenDifferent:
-        return Icons.cancel;
-      default:
-        return Icons.cloud;
-    }
-  }
+  WeatherConditionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,17 +32,20 @@ class _WeatherConditionScreenState extends State<WeatherConditionScreen> {
               child: ListView.builder(
                 padding: EdgeInsets.only(
                   top: isRound ? 6 : 8,
-                  bottom: isRound ? 40 : 8, // extra space for round watches
+                  bottom: isRound ? 40 : 8,
                   left: isRound ? 10 : 14,
                   right: isRound ? 10 : 14,
                 ),
-                itemCount: options.length,
-                itemBuilder: (context, i) => _buildWeatherButton(
-                  options[i]['label'],
-                  options[i]['type'],
-                  i,
-                  isRound,
-                ),
+                itemCount: controller.options.length,
+                itemBuilder: (context, i) {
+                  final opt = controller.options[i];
+                  return Obx(() => _buildWeatherButton(
+                        opt['label'],
+                        opt['icon'],
+                        i,
+                        isRound,
+                      ));
+                },
               ),
             ),
           ],
@@ -99,14 +56,15 @@ class _WeatherConditionScreenState extends State<WeatherConditionScreen> {
 
   Widget _buildWeatherButton(
     String label,
-    WeatherConditionType type,
+    IconData icon,
     int index,
     bool isRound,
   ) {
-    final bool isSelected = selectedIndex == index;
+    final bool isSelected = controller.selectedIndex.value == index;
 
     return GestureDetector(
-      onTap: () => _onSelect(index),
+      onTap: () => controller.selectOption(index),
+
       child: Container(
         margin: EdgeInsets.symmetric(vertical: isRound ? 4 : 6),
         padding: EdgeInsets.symmetric(
@@ -124,7 +82,7 @@ class _WeatherConditionScreenState extends State<WeatherConditionScreen> {
               isRound ? MainAxisAlignment.center : MainAxisAlignment.start,
           children: [
             Icon(
-              _getWeatherConditionIcon(type),
+              icon,
               size: isRound ? 16 : 18,
               color: isSelected ? uac_colors.AppColors.green : Colors.white,
             ),
@@ -135,7 +93,8 @@ class _WeatherConditionScreenState extends State<WeatherConditionScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: isSelected ? (isRound ? 13 : 15) : (isRound ? 12 : 14),
+                  fontSize:
+                      isSelected ? (isRound ? 13 : 15) : (isRound ? 12 : 14),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   color: isSelected ? uac_colors.AppColors.green : Colors.white,
                 ),

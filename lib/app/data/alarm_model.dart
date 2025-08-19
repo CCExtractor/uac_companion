@@ -1,6 +1,6 @@
 class Alarm {
   int? id; // local DB primary key
-  final int? watchId;
+  final String? uniqueSyncId;
   final String time;
   final List<int> days;
   final bool isEnabled;
@@ -30,7 +30,7 @@ class Alarm {
 
   Alarm({
     this.id,
-    this.watchId,
+    this.uniqueSyncId,
     required this.time,
     required this.days,
     required this.isEnabled,
@@ -53,7 +53,7 @@ class Alarm {
 
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
-        'watch_id': watchId,
+        'unique_sync_id': uniqueSyncId,
         'time': time,
         'days': days.join(','),
         'is_enabled': isEnabled ? 1 : 0,
@@ -83,7 +83,7 @@ class Alarm {
       };
 
   @override
-  String toString() => 'Alarm(id: $id, watchId: $watchId, time: $time, days: $days, '
+  String toString() => 'Alarm(id: $id, uniqueSyncId: $uniqueSyncId, time: $time, days: $days, '
       'isEnabled: $isEnabled, isOneTime: $isOneTime, fromWatch: $fromWatch, '
       'isActivityEnabled: $isActivityEnabled, activityInterval: $activityInterval, activityConditionType: $activityConditionType, '
       'isGuardian: $isGuardian, guardian: $guardian, guardianTimer: $guardianTimer, isCall: $isCall, '
@@ -112,8 +112,7 @@ Alarm alarmFromMap(Map<String, dynamic> map) {
 
   return Alarm(
     id: map['id'],
-    // phoneId: map['phone_id'] ?? null, // fallback to '' if missing for old rows
-    watchId: map['watch_id'],
+    uniqueSyncId: map['unique_sync_id'],
     time: map['time'],
     days: parsedDays,
     isEnabled: (map['is_enabled'] ?? 0) == 1,

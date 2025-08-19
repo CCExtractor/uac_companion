@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:uac_companion/app/utils/unique_id_generator.dart';
 import 'alarm_model.dart';
 
 class DBHelper {
@@ -17,26 +18,8 @@ class DBHelper {
     return _database!;
   }
 
-  // Future _createDB(Database db, int version) async {
-  //   await db.execute('''
-  //     CREATE TABLE alarms (
-  //       id INTEGER PRIMARY KEY AUTOINCREMENT,
-  //       time TEXT NOT NULL,
-  //       days TEXT NOT NULL,
-  //       is_enabled INTEGER NOT NULL,
-  //       is_one_time INTEGER NOT NULL DEFAULT 1,
-  //       from_watch INTEGER NOT NULL DEFAULT 1,
-  //       is_location_enabled INTEGER NOT NULL DEFAULT 0,
-  //       location TEXT DEFAULT '',
-  //       is_guardian INTEGER NOT NULL DEFAULT 0,
-  //       guardian TEXT DEFAULT '',
-  //       guardian_timer INTEGER NOT NULL DEFAULT 0,
-  //       is_call INTEGER NOT NULL DEFAULT 0
-  //     )
-  //   ''');
-  // }
   Future _createDB(Database db, int version) async {
-  await db.execute('''
+    await db.execute('''
     CREATE TABLE alarms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       time TEXT NOT NULL,
@@ -44,34 +27,31 @@ class DBHelper {
       is_enabled INTEGER NOT NULL,
       is_one_time INTEGER NOT NULL DEFAULT 1,
       from_watch INTEGER NOT NULL DEFAULT 1,
-      watch_id INTEGER NOT NULL DEFAULT -1,
+      unique_sync_id TEXT NOT NULL,
 
-      -- Screen Activity
       is_activity_enabled INTEGER NOT NULL DEFAULT 0,
       activity_interval INTEGER NOT NULL DEFAULT 0,
       activity_condition_type INTEGER NOT NULL DEFAULT 0,
 
-      -- Guardian Angel
       is_guardian INTEGER NOT NULL DEFAULT 0,
       guardian TEXT DEFAULT '',
       guardian_timer INTEGER NOT NULL DEFAULT 0,
       is_call INTEGER NOT NULL DEFAULT 0,
 
-      -- Weather Condition
       is_weather_enabled INTEGER NOT NULL DEFAULT 0,
       weather_condition_type INTEGER NOT NULL DEFAULT 0,
       weather_types TEXT DEFAULT '',
 
-      -- Location Condition
       is_location_enabled INTEGER NOT NULL DEFAULT 0,
       location TEXT DEFAULT '',
       location_condition_type INTEGER NOT NULL DEFAULT 0
     )
   ''');
-}
+  }
 
   Future<int> insert(String table, Map<String, dynamic> data) async {
-    return (await db).insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
+    return (await db)
+        .insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getAll(String table) async {
@@ -96,15 +76,14 @@ class AlarmDBService {
     final rawId = await DBHelper.instance.insert(_table, map);
 
     //** Offset to avoid ID conflict with phone-side alarms
-    var offsetId = rawId + 100000;
+    var unique_id_generator = generateUniqueId();
 
     // await DBHelper.instance.update(_table, {'id': offsetId}, rawId);
     await DBHelper.instance.update(
       _table,
-      {'id': rawId, 'watch_id': offsetId},
+      {'id': rawId, 'unique_sync_id': unique_id_generator},
       rawId,
     );
-
 
     return Alarm(
       id: rawId,
@@ -113,21 +92,17 @@ class AlarmDBService {
       isEnabled: alarm.isEnabled,
       isOneTime: alarm.isOneTime,
       fromWatch: alarm.fromWatch,
-      watchId: offsetId,
-
+      uniqueSyncId: unique_id_generator,
       isActivityEnabled: alarm.isActivityEnabled,
       activityInterval: alarm.activityInterval,
       activityConditionType: alarm.activityConditionType,
-
       isGuardian: alarm.isGuardian,
       guardian: alarm.guardian,
       guardianTimer: alarm.guardianTimer,
       isCall: alarm.isCall,
-
       isWeatherEnabled: alarm.isWeatherEnabled,
       weatherConditionType: alarm.weatherConditionType,
       weatherTypes: alarm.weatherTypes,
-
       isLocationEnabled: alarm.isLocationEnabled,
       location: alarm.location,
       locationConditionType: alarm.locationConditionType,

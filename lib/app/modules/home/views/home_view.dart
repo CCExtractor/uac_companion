@@ -69,15 +69,36 @@ class HomeView extends StatelessWidget {
                     final flutterDays = androidToFlutterDays(alarm.days);
                     return GestureDetector(
                       onTap: () async {
-                        debugPrint('Alarm tapped: ${alarm.time}');
+                        debugPrint('Alarm tapped: ${alarm}');
                         final result =
                             await Get.toNamed('/alarm_setup', arguments: {
                           'initialHour': int.parse(alarm.time.split(":")[0]),
                           'initialMinute': int.parse(alarm.time.split(":")[1]),
                           'alarmId': alarm.id,
                           'existingDays': alarm.days,
+                          'uniqueSyncId': alarm.uniqueSyncId,
+                          // Pass smart controls
+                          'isLocationEnabled': alarm.isLocationEnabled,
+                          'locationConditionType': alarm.locationConditionType,
+                          'location': alarm.location,
+
+                          'isActivityEnabled': alarm.isActivityEnabled,
+                          'activityConditionType': alarm.activityConditionType,
+                          'activityInterval': alarm.activityInterval,
+
+                          'isWeatherEnabled': alarm.isWeatherEnabled,
+                          'weatherConditionType': alarm.weatherConditionType,
+                          'weatherTypes': alarm.weatherTypes,
+
+                          'isGuardian': alarm.isGuardian,
+                          'guardian': alarm.guardian,
+                          'guardianTimer': alarm.guardianTimer,
+                          'isCall': alarm.isCall,
                         });
-                        if (result == true) HomeController.to.loadAlarms();
+                        if (result == true) {
+                          debugPrint('datasent from homeView');
+                          HomeController.to.loadAlarms();
+                        }
                       },
                       onLongPress: () =>
                           showDeleteDialog(context, alarm, HomeController.to),
@@ -92,7 +113,6 @@ class HomeView extends StatelessWidget {
                           color: AppColors.grayBlack,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -120,7 +140,7 @@ class HomeView extends StatelessWidget {
                               scale: isRound ? 0.7 : 0.8,
                               child: Switch(
                                 value: alarm.isEnabled,
-                                onChanged: (_) => HomeController.to.toggleAlarm(alarm.watchId!),
+                                onChanged: (_) => HomeController.to.toggleAlarm(alarm.uniqueSyncId!),
                                 activeColor: AppColors.green,
                                 inactiveThumbColor: Colors.grey,
                                 inactiveTrackColor: Colors.black26,

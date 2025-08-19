@@ -53,8 +53,8 @@ class UACDataLayerListenerService : WearableListenerService() {
                 //! Alarm receiving PATH
                 path == PATH_ALARM_PHONE_TO_WATCH -> {
                     val alarmJsonRaw = dataMap.getString("alarm_json")
-                    val phoneId = dataMap.getInt("watchId")
-                    Log.d(TAG, "Received alarm_json from phone: $alarmJsonRaw, for watchId: $phoneId")
+                    val uniqueSyncId = dataMap.getString("uniqueSyncId")
+                    Log.d(TAG, "Received alarm_json from phone: $alarmJsonRaw, for uniqueSyncId: $uniqueSyncId")
                     if (alarmJsonRaw != null) {
                         // AlarmDbHelper().insertAlarmFromJson(this, alarmJsonRaw)
                         AlarmDBService(this).insertAlarmFromJson(this, alarmJsonRaw)
@@ -67,6 +67,7 @@ class UACDataLayerListenerService : WearableListenerService() {
                 path == PATH_ACTION_PHONE_TO_WATCH -> {
                     val action = dataMap.getString("action")
                     val alarmId = dataMap.getInt("alarm_id", -1)
+                    val uniqueSyncId = dataMap.getString("uniqueSyncId") ?: ""
                     val timestamp = dataMap.getLong("timestamp", -1L)
 
                     if (action == null) {
@@ -80,6 +81,7 @@ class UACDataLayerListenerService : WearableListenerService() {
                         val intent = Intent(applicationContext, AlarmDismissReceiver::class.java).apply {
                             putExtra("alarmId", alarmId)
                             putExtra("fromPhone", true)
+                            putExtra("uniqueSyncId", uniqueSyncId)
                         }
                         sendBroadcast(intent)
                     }
@@ -87,6 +89,7 @@ class UACDataLayerListenerService : WearableListenerService() {
                     if(action == "snooze") {
                         val intent = Intent(applicationContext, AlarmSnoozeReceiver::class.java).apply{
                             putExtra("alarmId", alarmId)
+                            putExtra("uniqueSyncId", uniqueSyncId)
                             putExtra("fromPhone", true)
                         }
                         sendBroadcast(intent)
