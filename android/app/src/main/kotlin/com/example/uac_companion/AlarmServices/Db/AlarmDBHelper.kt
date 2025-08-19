@@ -16,6 +16,7 @@ class AlarmDBHelper(context: Context) : SQLiteOpenHelper(context, "wear_alarms.d
                 is_enabled INTEGER NOT NULL,
                 is_one_time INTEGER NOT NULL DEFAULT 1,
                 from_watch INTEGER NOT NULL DEFAULT 1,
+                unique_sync_id TEXT NOT NULL,
 
                 -- Screen Activity
                 is_activity_enabled INTEGER NOT NULL DEFAULT 0,

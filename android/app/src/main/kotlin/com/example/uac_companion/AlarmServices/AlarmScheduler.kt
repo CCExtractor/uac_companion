@@ -8,6 +8,7 @@ import android.util.Log
 import com.ccextractor.uac_companion.AlarmUtils.getNextValidTime
 import com.ccextractor.uac_companion.data.Alarm
 import java.util.*
+import kotlin.math.abs
 
 object AlarmScheduler {
     final val TAG = "AlarmScheduler"
@@ -17,7 +18,7 @@ object AlarmScheduler {
         val upcomingAlarm = AlarmUtils.getNextUpcomingAlarm(alarms)
         if (upcomingAlarm != null) {
             scheduleAlarm(context, upcomingAlarm)
-            Log.d(TAG, "scheduleNextAlarm: ${upcomingAlarm.id} at ${upcomingAlarm.time}")
+            Log.d(TAG, "scheduleNextAlarm: ${upcomingAlarm.uniqueSyncId} at ${upcomingAlarm.time}")
         } else {
             Log.d(TAG, "No upcoming alarms to schedule.")
         }
@@ -28,34 +29,34 @@ object AlarmScheduler {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val calendar = getNextValidTime(alarm) ?: return
 
-        val requestCode = alarm.id * 10
+        val requestCode = abs(alarm.uniqueSyncId.hashCode())
 
         cancelExistingAlarmsFromId(context, alarm)
-        val pendingIntent = createAlarmPendingIntent(context, alarm.id, requestCode, alarm)
+        val pendingIntent = createAlarmPendingIntent(context, alarm.uniqueSyncId, requestCode, alarm)
         setExactAlarmFun(alarmManager, calendar.timeInMillis, pendingIntent)
     }
 
     private fun cancelExistingAlarmsFromId(context: Context, alarm: Alarm) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val reqCode = alarm.id * 10
-        Log.d(TAG, "cancelExistingAlarmsFromId: ID=${alarm.id}, RequestCode=$reqCode")
-        val pendingIntent = createAlarmPendingIntent(context, alarm.id, reqCode, alarm)
+        val reqCode = abs(alarm.uniqueSyncId.hashCode())
+        val pendingIntent = createAlarmPendingIntent(context, alarm.uniqueSyncId, reqCode, alarm)
         alarmManager.cancel(pendingIntent)
     }
 
     private fun createAlarmPendingIntent(
             context: Context,
-            alarmId: Int,
+            uniqueSyncId: String,
             requestCode: Int,
             alarm: Alarm
     ): PendingIntent {
         val intent =
                 Intent(context, AlarmBroadcastReceiver::class.java).apply {
-                    action = "com.uac.wearcompanion.ALARM_TRIGGERED_$alarmId"
-                    putExtra("alarmId", alarmId)
+                    action = "com.uac.wearcompanion.ALARM_TRIGGERED_$uniqueSyncId"
+                    putExtra("uniqueSyncId", alarm.uniqueSyncId)
+                    putExtra("alarmId", alarm.id)
                     putExtra("days", alarm.days.joinToString(","))
                 }
-        return PendingIntent.getBroadcast(
+                return PendingIntent.getBroadcast(
                 context,
                 requestCode,
                 intent,
@@ -63,13 +64,13 @@ object AlarmScheduler {
         )
     }
 
-    fun cancelAlarm(context: Context, id: Int) {
+    fun cancelAlarm(context: Context, uniqueSyncId: String) {
         val allAlarms = AlarmUtils.getAllAlarmsFromDb(context)
-        val alarm = allAlarms.find { it.id == id }
-        if (alarm != null) {
+        val alarm = allAlarms.find { it.uniqueSyncId == uniqueSyncId }
+        if (alarm != null){
             cancelExistingAlarmsFromId(context, alarm)
         } else {
-            Log.e(TAG, "No alarm found with ID=$id to cancel")
+            Log.e(TAG, "No alarm found with ID=$uniqueSyncId to cancel")
         }
     }
 

@@ -9,7 +9,7 @@ class SmartControlsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SmartControlsController());
+  final controller = Get.find<SmartControlsController>();
     final isRound = WatchShapeService.isRound;
     final deviceWidth = MediaQuery.of(context).size.width;
 
@@ -47,14 +47,14 @@ class SmartControlsScreen extends StatelessWidget {
                 Obx(() => buildControlItem(
                       title: 'Guardian Angel',
                       showSwitch: true,
-                      switchValue: controller.isGuardianAngelOn.value,
+                      switchValue: controller.isGuardian.value,
                       onSwitchChanged: controller.toggleGuardianAngel,
                       isRound: isRound,
                     )),
                 Obx(() => buildControlItem(
                       title: 'Location Based',
                       showSwitch: true,
-                      switchValue: controller.isLocationConditionOn.value,
+                      switchValue: controller.isLocationEnabled.value,
                       onSwitchChanged: controller.toggleLocationBased,
                       isRound: isRound,
                     )),
@@ -122,7 +122,6 @@ class SmartControlsScreen extends StatelessWidget {
               icon: const Icon(Icons.add_circle, color: AppColors.green),
               onPressed: onAddPressed,
             ),
-          // Keep round layout untouched
           if (isRound && showSwitch)
             Flexible(
               child: Transform.scale(

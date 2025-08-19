@@ -2,11 +2,12 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uac_companion/app/data/alarm_model.dart';
-import 'package:uac_companion/app/data/alarm_utils.dart';
+import 'package:uac_companion/app/data/alarm_db_utils.dart';
 
 //* needed widgetsBindingObserver to make sure that the alarms are loaded when the app is resumed
 class HomeController extends GetxController with WidgetsBindingObserver {
   static HomeController get to => Get.find();
+  static const MethodChannel watchChannel = MethodChannel('uac_alarm_sync');
   var alarms = <Alarm>[].obs;
   static const platform = MethodChannel('uac_alarm_channel');
   final alarmService = AlarmDBService();
@@ -45,9 +46,9 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     alarms.assignAll(loadedAlarms);
   }
 
-  Future<void> toggleAlarm(int id) async {
+  Future<void> toggleAlarm(String uniqueSyncId) async {
   final updatedAlarms = alarms.map((alarm) {
-    if (alarm.id == id) {
+    if (alarm.uniqueSyncId == uniqueSyncId) {
       final updated = Alarm(
         id: alarm.id,
         time: alarm.time,
@@ -55,6 +56,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         isEnabled: !alarm.isEnabled,
         isOneTime: alarm.isOneTime,
         fromWatch: alarm.fromWatch,
+        uniqueSyncId: alarm.uniqueSyncId,
         isLocationEnabled: false,
         location: '',
         isGuardian: false,
@@ -67,7 +69,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     return alarm;
   }).toList();
 
-  final updatedAlarm = updatedAlarms.firstWhere((a) => a.id == id);
+  final updatedAlarm = updatedAlarms.firstWhere((a) => a.uniqueSyncId == uniqueSyncId);
   alarms.assignAll(updatedAlarms);
   await alarmService.updateAlarm(updatedAlarm);
   debugPrint('HomeController -> Alarm toggled: $updatedAlarm');
@@ -76,41 +78,38 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     if (!updatedAlarm.isEnabled) {
       await platform.invokeMethod('cancelAlarm', {
         'id': updatedAlarm.id,
-        'days': updatedAlarm.days,
+        'uniqueSyncId': updatedAlarm.uniqueSyncId,
+        // 'phoneId': updatedAlarm.phoneId
       });
     }
     await platform.invokeMethod('scheduleAlarm');
+    await watchChannel.invokeMethod('sendActionToPhone', {
+        'action': "update", 
+        'uniqueSyncId': updatedAlarm.uniqueSyncId,
+        'id': updatedAlarm.id
+    });
     await loadAlarms();
   } catch (e) {
     debugPrint('HomeController -> Error toggling alarm: $e');
   }
 }
 
-  // Future<void> deleteAlarm(Alarm alarm) async {
-  //   if (alarm.id == null) return;
-
-  //   await alarmService.deleteAlarm(alarm.id!);
-  //   alarms.removeWhere((a) => a.id == alarm.id);
-
-  //   try {
-  //     await platform.invokeMethod('scheduleAlarm');
-  //     // const syncChannel = MethodChannel('uac_alarm_sync');
-  //     debugPrint('HomeController -> Alarm with ID ${alarm.id} deleted and scheduled for cancellation');
-  //     await loadAlarms();
-  //   } catch (e) {
-  //     debugPrint('HomeControlelr -> Alarm delete/schedule failed: $e');
-  //   }
-  // }
   Future<void> deleteAlarm(Alarm alarm) async {
   if (alarm.id == null) return;
   try {
     await platform.invokeMethod('cancelAlarm', {
       'id': alarm.id,
+      'uniqueSyncId': alarm.uniqueSyncId
     });
     await alarmService.deleteAlarm(alarm.id!);
     alarms.removeWhere((a) => a.id == alarm.id);
     await platform.invokeMethod('scheduleAlarm');
     await loadAlarms();
+    await watchChannel.invokeMethod('sendActionToPhone', {
+        'action': "delete", 
+        'uniqueSyncId': alarm.uniqueSyncId,
+        'id': alarm.id
+      });
   } catch (e) {
     debugPrint('HomeController -> Alarm delete/cancel failed: $e');
   }

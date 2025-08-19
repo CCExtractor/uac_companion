@@ -33,22 +33,23 @@ object WatchAlarmSender {
 
         Wearable.getDataClient(context)
                 .putDataItem(request)
-                .addOnSuccessListener { Log.d(TAG, "Alarm sync sent via DataClient: $alarmJson") }
+                .addOnSuccessListener { Log.d(TAG, "Alarm sent via DataClient: $alarmJson") }
                 .addOnFailureListener { e -> Log.e(TAG, "Alarm sync failed via DataClient", e) }
     }
 
-    fun sendActionToPhone(context: Context, action: String, alarmId: Int) {
+    fun sendActionToPhone(context: Context, action: String, uniqueSyncId: String, id: Int) {
         val timestamp = System.currentTimeMillis()
         // val path = PATH_ALARM_WATCH_TO_PHONE
     
-        Log.d(TAG, "Sending action to phone: $action, alarmId: $alarmId")
+        Log.d(TAG, "Sending action to phone: $action for id: $id for uniqueSyncId: $uniqueSyncId")
     
         val putDataMapRequest = PutDataMapRequest.create(PATH_ACTION_WATCH_TO_PHONE)
         val dataMap = putDataMapRequest.dataMap
     
         // FIX: match keys used on receiving side
         dataMap.putString("action", action)
-        dataMap.putInt("alarm_id", alarmId)
+        dataMap.putString("uniqueSyncId", uniqueSyncId)
+        dataMap.putInt("id", id)
         dataMap.putLong("timestamp", timestamp)
     
         val request = putDataMapRequest.asPutDataRequest().setUrgent()

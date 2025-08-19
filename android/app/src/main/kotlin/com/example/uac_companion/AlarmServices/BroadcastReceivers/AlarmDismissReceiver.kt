@@ -11,12 +11,13 @@ class AlarmDismissReceiver : BroadcastReceiver() {
     final val TAG = "AlarmDismissReceiver"
     override fun onReceive(context: Context, intent: Intent?) {
         val alarmId = intent?.getIntExtra("alarmId", -1) ?: -1
+        val uniqueSyncId = intent?.getStringExtra("uniqueSyncId") ?: ""
         val fromPhone = intent?.getBooleanExtra("fromPhone", false) ?: false
         
-        Log.d(TAG, "Dismiss pressed for alarmId=$alarmId")
+        Log.d(TAG, "Dismiss pressed for uniqueSyncId = $uniqueSyncId")
 
         if (!fromPhone) {
-            WatchAlarmSender.sendActionToPhone(context, "dismiss", alarmId)
+            WatchAlarmSender.sendActionToPhone(context, "dismiss", uniqueSyncId, alarmId)
         }
 
         AlarmServiceHolder.ringtone?.let { ringtone ->

@@ -15,6 +15,7 @@ class AlarmDBService(context: Context) {
     fun insertAlarmFromJson(context: Context, jsonString: String): Long {
         try {
             val json = JSONObject(jsonString)
+            val uniqueSyncId = json.getString("uniqueSyncId")
             val id = json.getString("alarmID").hashCode()
             val time = json.getString("alarmTime")
             val rawDays = json.get("days")
@@ -32,6 +33,7 @@ class AlarmDBService(context: Context) {
                 put("is_enabled", json.optInt("isEnabled", 1))
                 put("is_one_time", json.optInt("isOneTime", if (days.isEmpty()) 1 else 0))
                 put("from_watch", 0)
+                put("unique_sync_id", uniqueSyncId)
 
                 // Screen Activity
                 put("is_activity_enabled", json.optInt("isActivityEnabled", 0))
@@ -74,6 +76,7 @@ class AlarmDBService(context: Context) {
             put("is_enabled", if (alarm.isEnabled) 1 else 0)
             put("is_one_time", alarm.isOneTime)
             put("from_watch", if (alarm.fromWatch) 1 else 0)
+            put("unique_sync_id", alarm.uniqueSyncId)
 
             // Screen Activity
             put("is_activity_enabled", if (alarm.isActivityEnabled) 1 else 0)
@@ -123,6 +126,7 @@ class AlarmDBService(context: Context) {
             put("is_enabled", if (alarm.isEnabled) 1 else 0)
             put("is_one_time", alarm.isOneTime)
             put("from_watch", if (alarm.fromWatch) 1 else 0)
+            put("unique_sync_id", alarm.uniqueSyncId)
 
             // Screen Activity
             put("is_activity_enabled", if (alarm.isActivityEnabled) 1 else 0)
@@ -150,8 +154,9 @@ class AlarmDBService(context: Context) {
         return db.update("alarms", values, "id = ?", arrayOf(alarm.id.toString()))
     }
 
-    fun deleteAlarm(id: Int): Int {
+    //! doubt
+    fun deleteAlarm(uniqueSyncId: String): Int {
         val db = dbHelper.writableDatabase
-        return db.delete("alarms", "id = ?", arrayOf(id.toString()))
+        return db.delete("alarms", "unique_sync_id = ?", arrayOf(uniqueSyncId))
     }
 }

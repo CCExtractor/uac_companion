@@ -56,6 +56,7 @@ object AlarmUtils {
             val isEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_enabled"))
             val isOneTime = cursor.getInt(cursor.getColumnIndexOrThrow("is_one_time"))
             val fromWatch = cursor.getInt(cursor.getColumnIndexOrThrow("from_watch")) == 1
+            val uniqueSyncId = cursor.getString(cursor.getColumnIndexOrThrow("unique_sync_id"))
             
             val isActivityEnabled = cursor.getInt(cursor.getColumnIndex("is_activity_enabled")) == 1
             val activityInterval = cursor.getInt(cursor.getColumnIndex("activity_interval"))
@@ -68,7 +69,6 @@ object AlarmUtils {
             
             val isWeatherEnabled = cursor.getInt(cursor.getColumnIndex("is_weather_enabled")) == 1
             val weatherConditionType = cursor.getInt(cursor.getColumnIndex("weather_condition_type"))
-            // val weatherTypes = cursor.getString(cursor.getColumnIndex("weather_types"))
             val weatherTypesRaw = cursor.getString(cursor.getColumnIndex("weather_types")) ?: ""
             val weatherTypes = weatherTypesRaw.split(",").mapNotNull { it.trim().toIntOrNull() }
             
@@ -86,6 +86,7 @@ object AlarmUtils {
                             isEnabled,
                             isOneTime,
                             fromWatch,
+                            uniqueSyncId,
 
                             isActivityEnabled,
                             activityInterval,
