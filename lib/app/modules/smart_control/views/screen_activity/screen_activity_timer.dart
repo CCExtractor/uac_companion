@@ -5,10 +5,9 @@ import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
 class ScreenActivityTimer extends StatelessWidget {
-  final String selectedLabel;
-  final ScreenActivityController controller = Get.find();
+  final String selectedLabel = Get.arguments as String? ?? 'Select Duration';
 
-  ScreenActivityTimer({super.key, required this.selectedLabel});
+  ScreenActivityTimer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +47,7 @@ class ScreenActivityTimer extends StatelessWidget {
                   SizedBox(height: isRound ? 5 : 10),
                   _buildIconButton(
                     Icons.check,
-                    () => Get.back(result: controller.selectedMinutes.value),
+                    ScreenActivityController.to.confirmTimer,
                     true,
                   ),
                 ],
@@ -72,16 +71,16 @@ class ScreenActivityTimer extends StatelessWidget {
         child: Obx(
           () => ListWheelScrollView.useDelegate(
             controller: FixedExtentScrollController(
-              initialItem: controller.selectedMinutes.value - 1,
+              initialItem: ScreenActivityController.to.selectedMinutes.value - 1,
             ),
             itemExtent: 36,
             perspective: 0.005,
             physics: const FixedExtentScrollPhysics(),
-            onSelectedItemChanged: (index) => controller.setMinutes(index + 1),
+            onSelectedItemChanged: (index) => ScreenActivityController.to.setMinutes(index + 1),
             childDelegate: ListWheelChildLoopingListDelegate(
               children: List.generate(60, (index) {
                 final int minuteValue = index + 1;
-                final bool isSelected = controller.selectedMinutes.value == minuteValue;
+                final bool isSelected = ScreenActivityController.to.selectedMinutes.value == minuteValue;
                 return Center(
                   child: Text(
                     minuteValue.toString().padLeft(2, '0'),

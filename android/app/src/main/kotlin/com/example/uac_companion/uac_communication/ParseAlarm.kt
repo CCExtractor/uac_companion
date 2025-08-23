@@ -24,7 +24,6 @@ fun parseAlarm(map: Map<*, *>): Alarm {
             ?.split(",")
             ?.mapNotNull { it.trim().toIntOrNull() }
             ?: emptyList(),
-        // phoneId = map["phone_id"] as? String ?: "",
         uniqueSyncId = map["unique_sync_id"] as? String ?: "",
         isEnabled = (map["is_enabled"] as? Number)?.toInt() ?: 0,
         isOneTime = map["is_one_time"] as? Int ?: 1,

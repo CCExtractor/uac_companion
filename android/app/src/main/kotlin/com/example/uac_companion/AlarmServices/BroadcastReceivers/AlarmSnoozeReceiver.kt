@@ -11,19 +11,18 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
     final val TAG = "AlarmSnoozeReceiver"
 //!need fixes alarm snoozes but with warning - W/Ringtone: Neither local nor remote playback available that makes the alarm to ring after 5 min but the alrm do not ring
     override fun onReceive(context: Context, intent: Intent) {
-        val alarmId = intent.getIntExtra("alarmId", -1)
+        // val alarmId = intent.getIntExtra("alarmId", -1)
          val uniqueSyncId = intent.getStringExtra("uniqueSyncId") ?: ""
         val hour = intent.getIntExtra("hour", -1)
         val minute = intent.getIntExtra("minute", -1)
         // val isSnoozed = intent.getBooleanExtra("isSnoozed", false)        
         val fromPhone = intent.getBooleanExtra("fromPhone", false) ?: false
-        Log.d(TAG, "received intents: $alarmId, $uniqueSyncId, ")
 
         if (!fromPhone) {
-            WatchAlarmSender.sendActionToPhone(context, "snooze", uniqueSyncId, alarmId)
+            WatchAlarmSender.sendActionToPhone(context, "snooze", uniqueSyncId)
         }
 
-        Log.d(TAG, "Snoozing alarmId=$alarmId & uniqueSyncId: $uniqueSyncId for +5 minute...")
+        Log.d(TAG, "Snoozing & uniqueSyncId: $uniqueSyncId for +5 minute...")
 
         // Stop current sound/vibration/notification
         AlarmServiceHolder.ringtone?.stop()
@@ -34,10 +33,10 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
         // Reschedule the alarm 5 minute ahead
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         // val triggerAtMillis = System.currentTimeMillis() + 300_000
-        val triggerAtMillis = System.currentTimeMillis() + 3_000
+        val triggerAtMillis = System.currentTimeMillis() + 300_000
 
         val snoozeIntent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
-            putExtra("alarmId", alarmId)
+            // putExtra("alarmId", alarmId)
             putExtra("uniqueSyncId", uniqueSyncId)
             putExtra("hour", hour)
             putExtra("minute", minute)
@@ -47,7 +46,7 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
         val snoozeRequestCode = abs(uniqueSyncId.hashCode()) + 1
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,
-            // alarmId, // Same ID, reused for snooze
+            // alarmId,
             snoozeRequestCode,
             snoozeIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -59,6 +58,6 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, snoozePendingIntent)
         }
 
-        Log.d(TAG, "→ Snoozed alarmId=$alarmId to $triggerAtMillis")
+        Log.d(TAG, "→ Snoozed alarmId=$uniqueSyncId to $triggerAtMillis")
     }
 }

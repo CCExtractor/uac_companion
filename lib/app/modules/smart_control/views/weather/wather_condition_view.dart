@@ -5,12 +5,12 @@ import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
 class WeatherConditionScreen extends StatelessWidget {
-  final WeatherConditionController controller = Get.put(WeatherConditionController());
-
-  WeatherConditionScreen({super.key});
+  const WeatherConditionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Initialize the controller for this feature
+    Get.put(WeatherConditionController());
     final isRound = WatchShapeService.isRound;
 
     return Scaffold(
@@ -36,9 +36,9 @@ class WeatherConditionScreen extends StatelessWidget {
                   left: isRound ? 10 : 14,
                   right: isRound ? 10 : 14,
                 ),
-                itemCount: controller.options.length,
+                itemCount: WeatherConditionController.to.options.length,
                 itemBuilder: (context, i) {
-                  final opt = controller.options[i];
+                  final opt = WeatherConditionController.to.options[i];
                   return Obx(() => _buildWeatherButton(
                         opt['label'],
                         opt['icon'],
@@ -60,11 +60,10 @@ class WeatherConditionScreen extends StatelessWidget {
     int index,
     bool isRound,
   ) {
-    final bool isSelected = controller.selectedIndex.value == index;
+    final bool isSelected = WeatherConditionController.to.selectedIndex.value == index;
 
     return GestureDetector(
-      onTap: () => controller.selectOption(index),
-
+      onTap: () => WeatherConditionController.to.selectOption(index),
       child: Container(
         margin: EdgeInsets.symmetric(vertical: isRound ? 4 : 6),
         padding: EdgeInsets.symmetric(

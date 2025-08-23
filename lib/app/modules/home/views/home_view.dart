@@ -71,7 +71,7 @@ class HomeView extends StatelessWidget {
                       onTap: () async {
                         debugPrint('Alarm tapped: ${alarm}');
                         final result =
-                            await Get.toNamed('/alarm_setup', arguments: {
+                          await Get.toNamed('/alarm_setup', arguments: {
                           'initialHour': int.parse(alarm.time.split(":")[0]),
                           'initialMinute': int.parse(alarm.time.split(":")[1]),
                           'alarmId': alarm.id,

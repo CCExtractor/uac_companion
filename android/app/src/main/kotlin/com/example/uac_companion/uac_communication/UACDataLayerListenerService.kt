@@ -9,12 +9,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import android.os.Handler
 import android.os.Looper
-// import com.ccextractor.uac_companion.communication.data.AlarmModelReceived
 import com.ccextractor.uac_companion.AlarmScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.google.android.gms.wearable.*
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.launch
@@ -26,16 +24,18 @@ class UACDataLayerListenerService : WearableListenerService() {
     private val TAG = "UACDataLayerListenerService"
     private val PATH_ACTION_PHONE_TO_WATCH = "/uac_phone_to_watch/action"
     private val PATH_ALARM_PHONE_TO_WATCH = "/uac_phone_to_watch/alarm"
+    private val PATH_FOR_SMART_CONTOLS_VERDICTS = "/uac/pre_check_verdict"
 
     companion object {
         var flutterEngine: FlutterEngine? = null
         val mainThreadHandler = Handler(Looper.getMainLooper())
         const val CHANNEL_NAME = "uac_alarm_channel"
-    }    
+    }
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "🟢 Watch UACDataLayerListenerService created and alive")    }
+        Log.d(TAG, "🟢 Watch UACDataLayerListenerService created and alive")
+    }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         Log.d(TAG, "📡 Watch DataLayerService triggered")
@@ -47,68 +47,105 @@ class UACDataLayerListenerService : WearableListenerService() {
             val path = item.uri.path ?: continue
             val dataMap = DataMapItem.fromDataItem(item).dataMap
 
-            Log.d(TAG, "➡ Path: $path | Data keys: ${dataMap.keySet()}")
-
             when {
                 //! Alarm receiving PATH
                 path == PATH_ALARM_PHONE_TO_WATCH -> {
                     val alarmJsonRaw = dataMap.getString("alarm_json")
-                    val uniqueSyncId = dataMap.getString("uniqueSyncId")
-                    Log.d(TAG, "Received alarm_json from phone: $alarmJsonRaw, for uniqueSyncId: $uniqueSyncId")
                     if (alarmJsonRaw != null) {
-                        // AlarmDbHelper().insertAlarmFromJson(this, alarmJsonRaw)
+                        Log.d(TAG, "Received alarm data from phone.")
                         AlarmDBService(this).insertAlarmFromJson(this, alarmJsonRaw)
                         AlarmScheduler.scheduleNextAlarm(this)
-                        notifyFlutterOfAlarmInsert()
+                        
+                        notifyFlutterOfAlarmChange()
                     }
                 }
 
                 //! Action receiving path
                 path == PATH_ACTION_PHONE_TO_WATCH -> {
                     val action = dataMap.getString("action")
-                    val alarmId = dataMap.getInt("alarm_id", -1)
-                    val uniqueSyncId = dataMap.getString("uniqueSyncId") ?: ""
-                    val timestamp = dataMap.getLong("timestamp", -1L)
+                    val uniqueSyncId = dataMap.getString("alarm_id") ?: ""
 
                     if (action == null) {
                         Log.w(TAG, "Received null action from phone.")
                         continue
                     }
 
-                    Log.d(TAG, "Received action from phone: '$action' for alarm ID: $alarmId")
+                    Log.d(TAG, "Received action from phone: '$action' for uniqueSyncId: $uniqueSyncId")
 
-                    if (action == "dismiss") {
-                        val intent = Intent(applicationContext, AlarmDismissReceiver::class.java).apply {
-                            putExtra("alarmId", alarmId)
-                            putExtra("fromPhone", true)
-                            putExtra("uniqueSyncId", uniqueSyncId)
+                    when (action) {
+                        "delete alarm" -> deleteAlarm(uniqueSyncId)
+                        "dismiss" -> {
+                            val intent = Intent(applicationContext, AlarmDismissReceiver::class.java).apply {
+                                putExtra("alarmId", uniqueSyncId)
+                                putExtra("fromPhone", true)
+                            }
+                            sendBroadcast(intent)
                         }
-                        sendBroadcast(intent)
-                    }
-
-                    if(action == "snooze") {
-                        val intent = Intent(applicationContext, AlarmSnoozeReceiver::class.java).apply{
-                            putExtra("alarmId", alarmId)
-                            putExtra("uniqueSyncId", uniqueSyncId)
-                            putExtra("fromPhone", true)
+                        "snooze" -> {
+                            val intent = Intent(applicationContext, AlarmSnoozeReceiver::class.java).apply{
+                                putExtra("alarmId", uniqueSyncId)
+                                putExtra("fromPhone", true)
+                            }
+                            sendBroadcast(intent)
                         }
-                        sendBroadcast(intent)
                     }
                 }
 
-                else -> {
-                    if (path.startsWith("/uac_fallback/")) {
-                        val action = dataMap.getString("action")
-                        val timestamp = dataMap.getLong("timestamp")
-                        if (action == null || timestamp == 0L) {
-                            Log.w(TAG, "Skipping stale fallback event: action=$action, timestamp=$timestamp")
-                        } else {
-                            Log.d(TAG, "Fallback received: action=$action at $timestamp")
+                path == PATH_FOR_SMART_CONTOLS_VERDICTS -> {
+                    val alarmId = dataMap.getString("alarmID")
+                    val willRing = dataMap.getBoolean("willRing", true)
+                    val reason = dataMap.getString("reason")
+    
+                    Log.d(TAG, "Verdict received for alarm $alarmId: willRing=$willRing, Reason: $reason")
+    
+                    if (alarmId != null && !willRing) {
+                        Log.i(TAG, "Verdict is 'Don't Ring'. Attempting to cancel scheduled alarm on watch for ID: $alarmId")
+                        
+                        CoroutineScope(Dispatchers.IO).launch {
+                            cancelScheduledAlarm(alarmId)
                         }
                     }
                 }
             }
         }
         dataEvents.release()
+    }
+
+    private fun cancelScheduledAlarm(uniqueSyncId: String) {
+        AlarmScheduler.cancelAlarm(applicationContext, uniqueSyncId)
+        Log.d(TAG, "Called AlarmScheduler.cancelAlarm for uniqueSyncId: $uniqueSyncId")
+    }
+
+    private fun deleteAlarm(uniqueSyncId: String) {
+        if (uniqueSyncId.isEmpty()) {
+            Log.w(TAG, "Cannot delete alarm, uniqueSyncId is empty.")
+            return
+        }
+
+        Log.d(TAG, "Attempting to delete alarm with uniqueSyncId: $uniqueSyncId")
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            val dbService = AlarmDBService(applicationContext)
+            val rowsDeleted = dbService.deleteAlarm(uniqueSyncId)
+            
+            withContext(Dispatchers.Main) {
+                if (rowsDeleted > 0) {
+                    Log.d(TAG, "✅ Successfully deleted alarm from the watch database.")
+                    AlarmScheduler.scheduleNextAlarm(applicationContext)
+                    notifyFlutterOfAlarmChange()
+                } else {
+                    Log.w(TAG, "⚠️ No alarm found with uniqueSyncId '$uniqueSyncId' to delete.")
+                }
+            }
+        }
+    }
+
+    private fun notifyFlutterOfAlarmChange() {
+        mainThreadHandler.post {
+            flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                Log.d(TAG, "🚀 Sending 'alarmsChanged' event to Flutter on the watch.")
+                MethodChannel(messenger, CHANNEL_NAME).invokeMethod("alarmsChanged", null)
+            } ?: Log.w(TAG, "Could not notify Flutter: flutterEngine or messenger is null.")
+        }
     }
 }

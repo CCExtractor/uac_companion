@@ -4,6 +4,9 @@ import 'package:uac_companion/app/modules/smart_control/views/weather/weather_co
 import 'package:uac_companion/app/modules/smart_control/controllers/smart_controls_controller.dart';
 
 class WeatherConditionController extends GetxController {
+  // Add this static getter to easily access the controller instance
+  static WeatherConditionController get to => Get.find();
+
   final List<Map<String, dynamic>> options = [
     {'label': 'Ring when Match', 'icon': Icons.alarm, 'type': 1},
     {'label': 'Cancel when Match', 'icon': Icons.alarm_off, 'type': 2},
@@ -29,10 +32,11 @@ class WeatherConditionController extends GetxController {
     debugPrint('Selected weather option: ${option['label']}');
 
     final selectedWeatherCodes = await Get.to(
-      () => WeatherConditionPicker(selectedLabel: option['label']),
+      () => WeatherConditionPicker(), // Pass the label via arguments
+      arguments: option['label'],
     );
 
-    if (selectedWeatherCodes != null) {
+    if (selectedWeatherCodes != null && selectedWeatherCodes is List<int>) {
       debugPrint(
         'Weather condition: ${option['label']} with codes $selectedWeatherCodes',
       );
@@ -40,8 +44,9 @@ class WeatherConditionController extends GetxController {
       SmartControlsController.to.updateWeatherCondition(
         true,
         option['type'] as int,
-        List<int>.from(selectedWeatherCodes),
+        selectedWeatherCodes,
       );
+      // Let the SmartControlsController handle Get.back() if needed
     }
   }
 
@@ -54,7 +59,8 @@ class WeatherConditionController extends GetxController {
   }
 
   void confirmSelection() {
-    final selectedWeatherCodes = selectedWeather.map((i) => i + 1).toList();
+    // The weather codes are 1-based, so map the 0-based index
+    final selectedWeatherCodes = selectedWeather.map((index) => index).toList();
     debugPrint("Selected weather codes: $selectedWeatherCodes");
     Get.back(result: selectedWeatherCodes);
   }

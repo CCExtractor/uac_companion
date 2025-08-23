@@ -12,7 +12,6 @@ class MoreSettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isRound = WatchShapeService.isRound;
 
-    // Get actual alarm days from Get.arguments
     final days = Get.arguments as List<int>? ?? [];
     // Initialize controller with actual days
     MoreSettingsController.to.init(days);

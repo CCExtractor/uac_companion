@@ -16,8 +16,8 @@ class AlarmDBService(context: Context) {
         try {
             val json = JSONObject(jsonString)
             val uniqueSyncId = json.getString("uniqueSyncId")
-            val id = json.getString("alarmID").hashCode()
-            val time = json.getString("alarmTime")
+            val id = json.getInt("id")
+            val time = json.getString("time")
             val rawDays = json.get("days")
             val days: List<Int> =
                 when (rawDays) {
@@ -25,6 +25,7 @@ class AlarmDBService(context: Context) {
                     is JSONArray -> List(rawDays.length()) { rawDays.getInt(it) }
                     else -> emptyList()
                 }
+                Log.d("from alarmDBServies", "$id")
 
             val values = ContentValues().apply {
                 put("id", id)
@@ -36,23 +37,26 @@ class AlarmDBService(context: Context) {
                 put("unique_sync_id", uniqueSyncId)
 
                 // Screen Activity
-                put("is_activity_enabled", json.optInt("isActivityEnabled", 0))
+                put("is_activity_enabled", if (json.optBoolean("isActivityEnabled", false)) 1 else 0)
                 put("activity_interval", json.optInt("activityInterval", 0))
                 put("activity_condition_type", json.optInt("activityConditionType", 0))
 
                 // Guardian Angel
-                put("is_guardian", json.optInt("isGuardian", 0))
+                put("is_guardian", if (json.optBoolean("isGuardian", false)) 1 else 0)
                 put("guardian", json.optString("guardian", ""))
                 put("guardian_timer", json.optInt("guardianTimer", 0))
-                put("is_call", json.optInt("isCall", 0))
+                // put("is_call", json.optInt("isCall", 0))
+                put("is_call", if (json.optBoolean("isCall", false)) 1 else 0)
 
                 // Weather Condition
-                put("is_weather_enabled", json.optInt("isWeatherEnabled", 0))
+                put("is_weather_enabled", if (json.optBoolean("isWeatherEnabled", false)) 1 else 0)
                 put("weather_condition_type", json.optInt("weatherConditionType", 0))
-                put("weather_types", json.optJSONArray("weatherTypes")?.join(",") ?: "")
+                val weatherTypesStr = json.optString("weatherTypes", "[]")
+                val cleanWeatherTypes = weatherTypesStr.replace("[", "").replace("]", "")
+                put("weather_types", cleanWeatherTypes)
 
                 // Location Condition
-                put("is_location_enabled", json.optInt("isLocationEnabled", 0))
+                put("is_location_enabled", if (json.optBoolean("isLocationEnabled", false)) 1 else 0)
                 put("location", json.optString("location", ""))
                 put("location_condition_type", json.optInt("locationConditionType", 0))
             }
@@ -92,8 +96,6 @@ class AlarmDBService(context: Context) {
             // Weather Condition
             put("is_weather_enabled", if (alarm.isWeatherEnabled) 1 else 0)
             put("weather_condition_type", alarm.weatherConditionType)
-            // put("weather_types", alarm.weatherTypes.joinToString(","))
-            // put("weather_types", alarm.weatherTypes.joinToString(","))
             put("weather_types", alarm.weatherTypes.toList().joinToString(","))
 
 
@@ -142,8 +144,6 @@ class AlarmDBService(context: Context) {
             // Weather Condition
             put("is_weather_enabled", if (alarm.isWeatherEnabled) 1 else 0)
             put("weather_condition_type", alarm.weatherConditionType)
-            // put("weather_types", alarm.weatherTypes.joinToString(","))
-            // put("weather_types", alarm.weatherTypes.joinToString(","))
             put("weather_types", alarm.weatherTypes.toList().joinToString(","))
 
             // Location Condition
@@ -151,12 +151,37 @@ class AlarmDBService(context: Context) {
             put("location", alarm.location)
             put("location_condition_type", alarm.locationConditionType)
         }
-        return db.update("alarms", values, "id = ?", arrayOf(alarm.id.toString()))
+        // return db.update("alarms", values, "id = ?", arrayOf(alarm.id.toString()))
+        return db.update("alarms", values, "unique_sync_id = ?", arrayOf(alarm.uniqueSyncId))
     }
 
-    //! doubt
     fun deleteAlarm(uniqueSyncId: String): Int {
         val db = dbHelper.writableDatabase
         return db.delete("alarms", "unique_sync_id = ?", arrayOf(uniqueSyncId))
+    }
+
+    fun Alarm.toMap(): Map<String, Any?> {
+        return mapOf(
+            "id" to id,
+            "time" to time,
+            "days" to days,
+            "isEnabled" to isEnabled,
+            "isOneTime" to isOneTime,
+            "fromWatch" to fromWatch,
+            "uniqueSyncId" to uniqueSyncId,
+            "isActivityEnabled" to isActivityEnabled,
+            "activityInterval" to activityInterval,
+            "activityConditionType" to activityConditionType,
+            "isGuardian" to isGuardian,
+            "guardian" to guardian,
+            "guardianTimer" to guardianTimer,
+            "isCall" to isCall,
+            "isWeatherEnabled" to isWeatherEnabled,
+            "weatherConditionType" to weatherConditionType,
+            "weatherTypes" to weatherTypes,
+            "isLocationEnabled" to isLocationEnabled,
+            "location" to location,
+            "locationConditionType" to locationConditionType
+        )
     }
 }

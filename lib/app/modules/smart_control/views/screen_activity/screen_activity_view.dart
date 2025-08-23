@@ -5,12 +5,11 @@ import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
 class ScreenActivity extends StatelessWidget {
-  final ScreenActivityController controller = Get.put(ScreenActivityController());
-  
-  ScreenActivity({super.key});
+  const ScreenActivity({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Get.put(ScreenActivityController());
     final isRound = WatchShapeService.isRound;
 
     return Scaffold(
@@ -35,16 +34,16 @@ class ScreenActivity extends StatelessWidget {
                 left: isRound ? 10 : 14,
                 right: isRound ? 10 : 14,
               ),
-              itemCount: controller.options.length,
+              itemCount: ScreenActivityController.to.options.length,
               itemBuilder: (context, i) {
-                final option = controller.options[i];
+                final option = ScreenActivityController.to.options[i];
 
                 return Obx(() {
-                  final isSelected = controller.selectedIndex.value == i;
+                  final isSelected = ScreenActivityController.to.selectedIndex.value == i;
                   return _buildActivityButton(
                     option['label'],
                     option['type'],
-                    i, // Pass index 'i' to the button
+                    i,
                     isRound,
                     isSelected,
                   );
@@ -65,7 +64,7 @@ class ScreenActivity extends StatelessWidget {
     bool isSelected,
   ) {
     return GestureDetector(
-      onTap: () => controller.handleOptionSelection(index),
+      onTap: () => ScreenActivityController.to.handleOptionSelection(index),
       child: Container(
         margin: EdgeInsets.symmetric(vertical: isRound ? 4 : 6),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -106,16 +105,11 @@ class ScreenActivity extends StatelessWidget {
 
   IconData _getActivityConditionIcon(int conditionType) {
     switch (conditionType) {
-      case 1:
-        return Icons.smartphone;
-      case 2:
-        return Icons.phone_android;
-      case 3:
-        return Icons.mobile_off;
-      case 4:
-        return Icons.do_not_disturb_on;
-      default:
-        return Icons.help_outline; 
+      case 1: return Icons.smartphone;
+      case 2: return Icons.phone_android;
+      case 3: return Icons.mobile_off;
+      case 4: return Icons.do_not_disturb_on;
+      default: return Icons.help_outline;
     }
   }
 }

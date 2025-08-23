@@ -87,7 +87,7 @@ class AlarmSetupView extends StatelessWidget {
                         },
                             AlarmSetupControllers.to.selectedIconIndex.value ==
                                 1),
-                        _buildIconButton(2, Icons.notifications_active,
+                        _buildIconButton(2, Icons.auto_awesome,
                             () async {
                           final controller = AlarmSetupControllers.to;
 

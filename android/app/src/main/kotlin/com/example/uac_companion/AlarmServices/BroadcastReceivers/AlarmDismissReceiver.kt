@@ -10,14 +10,14 @@ import com.ccextractor.uac_companion.communication.WatchAlarmSender
 class AlarmDismissReceiver : BroadcastReceiver() {
     final val TAG = "AlarmDismissReceiver"
     override fun onReceive(context: Context, intent: Intent?) {
-        val alarmId = intent?.getIntExtra("alarmId", -1) ?: -1
+        // val alarmId = intent?.getIntExtra("alarmId", -1) ?: -1
         val uniqueSyncId = intent?.getStringExtra("uniqueSyncId") ?: ""
         val fromPhone = intent?.getBooleanExtra("fromPhone", false) ?: false
         
         Log.d(TAG, "Dismiss pressed for uniqueSyncId = $uniqueSyncId")
 
         if (!fromPhone) {
-            WatchAlarmSender.sendActionToPhone(context, "dismiss", uniqueSyncId, alarmId)
+            WatchAlarmSender.sendActionToPhone(context, "dismiss", uniqueSyncId)
         }
 
         AlarmServiceHolder.ringtone?.let { ringtone ->

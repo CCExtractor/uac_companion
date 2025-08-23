@@ -47,28 +47,24 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.screenActivityTimer,
-      page: () => ScreenActivityTimer(
-        selectedLabel: Get.arguments ?? '',
-      ),
+      page: () => ScreenActivityTimer(),
       binding: SmartControlBinding(),
     ),
     //! weather conditions
     GetPage(
       name: AppRoutes.weatherCondition,
-      page: () => WeatherConditionScreen(),
+      page: () => const WeatherConditionScreen(),
       binding: SmartControlBinding(),
     ),
     GetPage(
       name: AppRoutes.weatherSelector,
-      page: () => WeatherConditionPicker(
-        selectedLabel: '',
-      ),
+      page: () => WeatherConditionPicker(),
       binding: SmartControlBinding(),
     ),
     //! location conditions
     GetPage(
       name: AppRoutes.locationConditionScreen,
-      page: () => LocationConditionScreen(),
+      page: () => const LocationConditionScreen(),
       binding: SmartControlBinding(),
     ),
     GetPage(
