@@ -30,7 +30,7 @@ class MainActivity : FlutterActivity() {
         checkAndRequestPermissions()
         UACDataLayerListenerService.flutterEngine = flutterEngine
 
-        // Phone alarm scheduling / cancellation
+        // Alarm scheduling / cancellation
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -41,7 +41,7 @@ class MainActivity : FlutterActivity() {
                     "cancelAlarm" -> {
                         val id = call.argument<Int>("id")
                         val uniqueSyncId = call.argument<String>("uniqueSyncId") ?: ""
-                        if (id != null) {
+                        if (uniqueSyncId != null) {
                             AlarmScheduler.cancelAlarm(this, uniqueSyncId)
                             result.success(null)
                         } else {
@@ -60,7 +60,9 @@ class MainActivity : FlutterActivity() {
                         try {
                             val args = call.arguments as Map<*, *>
                             val alarm = parseAlarm(args)
-                            WatchAlarmSender.sendAlarmToPhone(this, alarm)
+                            val isNewAlarm = args["isNewAlarm"] as? Boolean ?: false
+
+                            WatchAlarmSender.sendAlarmToPhone(this, alarm, isNewAlarm)
                             result.success("sent")
                         } catch (e: Exception) {
                             Log.e("UAC_WatchChannel", "Failed to parse/send alarm", e)
@@ -70,11 +72,11 @@ class MainActivity : FlutterActivity() {
                     "sendActionToPhone" -> {
                         try {
                             val action = call.argument<String>("action") ?: ""
-                             val uniqueSyncId = call.argument<String>("uniqueSyncId") ?: ""
-                            val alarmId = call.argument<Int>("id") ?: -1
+                            val uniqueSyncId = call.argument<String>("uniqueSyncId") ?: ""
+                            // val alarmId = call.argument<Int>("id") ?: -1
 
-                            Log.d("MainActivityFile", "$action for uniqueSyncId: $uniqueSyncId and id: $alarmId")
-                            WatchAlarmSender.sendActionToPhone(this, action, uniqueSyncId, alarmId)
+                            Log.d("MainActivityFile", "$action for uniqueSyncId: $uniqueSyncId")
+                            WatchAlarmSender.sendActionToPhone(this, action, uniqueSyncId)
                             result.success("sent")
                         } catch (e: Exception) {
                             Log.e("UAC_WatchChannel", "Failed to send action", e)

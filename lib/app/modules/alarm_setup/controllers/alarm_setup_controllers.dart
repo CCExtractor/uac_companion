@@ -8,7 +8,6 @@ import 'package:uac_companion/app/utils/time_utils.dart';
 import 'package:uac_companion/app/utils/unique_id_generator.dart';
 
 class AlarmSetupControllers extends GetxController {
-  static const platform = MethodChannel('uac_alarm_channel');
   static AlarmSetupControllers get to => Get.find();
 
   final RxInt selectedHour = 7.obs;
@@ -41,6 +40,8 @@ class AlarmSetupControllers extends GetxController {
   int? initialHour;
   int? initialMinute;
   int? alarmId;
+
+  String? existingUniqueSyncId;
 
   void updateSmartControlsFromResult(Map<String, dynamic> result) {
     // Location
@@ -109,6 +110,7 @@ class AlarmSetupControllers extends GetxController {
     initialHour = args['initialHour'];
     initialMinute = args['initialMinute'];
     alarmId = args['alarmId'];
+    existingUniqueSyncId = args['uniqueSyncId'];
 
     final existingDays = args['existingDays'];
     if (existingDays is List<int>) {
@@ -125,7 +127,6 @@ class AlarmSetupControllers extends GetxController {
 
     isWeatherEnabled.value = args['isWeatherEnabled'] ?? false;
     weatherConditionType.value = args['weatherConditionType'] ?? 0;
-    // Ensure weatherTypes is a List<int>
     if (args['weatherTypes'] is List) {
       weatherTypes.assignAll(List<int>.from(args['weatherTypes']));
     }
@@ -156,8 +157,9 @@ class AlarmSetupControllers extends GetxController {
     final formattedTime = formatTime(hour24, selectedMinute.value);
     final androidDays = flutterToAndroidDays(selectedDays);
     const alarmChannel = MethodChannel('uac_alarm_channel');
-    const syncChannel = MethodChannel('uac_alarm_sync');
-    var uniqueIdGenerator = generateUniqueId();
+    const watchChannel = MethodChannel('uac_alarm_sync');
+
+    final String finalUniqueSyncId = existingUniqueSyncId ?? generateUniqueId();
 
     final alarm = Alarm(
       id: alarmId,
@@ -165,8 +167,9 @@ class AlarmSetupControllers extends GetxController {
       days: androidDays,
       isEnabled: true,
       isOneTime: selectedDays.isEmpty ? 1 : 0,
-      uniqueSyncId: uniqueIdGenerator,
-      fromWatch: true,
+      uniqueSyncId: finalUniqueSyncId,
+      // fromWatch: true,
+      fromWatch: alarmId == null ? true : false,
 
       isLocationEnabled: isLocationEnabled.value,
       location: location.value,
@@ -189,26 +192,42 @@ class AlarmSetupControllers extends GetxController {
     debugPrint('flutter before insert/update: $alarm');
     final dbService = AlarmDBService();
     int finalAlarmId;
+    bool isNewAlarm;
     int uniqueSyncId;
 
     if (alarmId != null) {
+      isNewAlarm = false;
       await dbService.updateAlarm(alarm);
       finalAlarmId = alarm.id!;
       uniqueSyncId = finalAlarmId;
     } else {
+      isNewAlarm = true;
       final insertedAlarm = await dbService.insertNewAlarm(alarm);
       finalAlarmId = insertedAlarm.id!;
       alarmId = finalAlarmId;
-      uniqueSyncId = finalAlarmId;
+      // uniqueSyncId = finalAlarmId;
+      existingUniqueSyncId = finalUniqueSyncId;
     }
 
     await alarmChannel.invokeMethod('scheduleAlarm');
 
     final alarmMap = alarm.toMap();
     alarmMap['id'] = finalAlarmId;
-    alarmMap['unique_sync_id'] = generateUniqueId();
-    await syncChannel.invokeMethod('sendAlarmToPhone', alarmMap);
+    alarmMap['unique_sync_id'] = alarm.uniqueSyncId;
+    alarmMap['isNewAlarm'] = isNewAlarm;
 
+    await watchChannel.invokeMethod('sendAlarmToPhone', alarmMap);
+    debugPrint("uniqueSyncId= ${alarm.uniqueSyncId}");
+  //   if (isNewAlarm) {
+  //   final alarmMap = alarm.toMap();
+  //   alarmMap['id'] = finalAlarmId; // Make sure to use the final ID from the DB
+  //   alarmMap['isNewAlarm'] = isNewAlarm;
+
+  //   await watchChannel.invokeMethod('sendAlarmToPhone', alarmMap);
+  //   debugPrint("Syncing new watch-created alarm to the phone.");
+  // } else {
+  //   debugPrint("Skipping sync to phone because this was just an edit of an existing alarm.");
+  // }
     Get.back(result: true);
   }
 

@@ -5,10 +5,9 @@ import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
 class WeatherConditionPicker extends StatelessWidget {
-  final String selectedLabel;
-  final WeatherConditionController controller = Get.find();
+  final String selectedLabel = Get.arguments as String? ?? 'Select Weather';
 
-  WeatherConditionPicker({super.key, required this.selectedLabel});
+  WeatherConditionPicker({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +44,7 @@ class WeatherConditionPicker extends StatelessWidget {
                 _buildWeatherPicker(isRound),
                 SizedBox(height: isRound ? 5 : 10),
                 GestureDetector(
-                  onTap: controller.confirmSelection,
+                  onTap: WeatherConditionController.to.confirmSelection,
                   child: Container(
                     padding: EdgeInsets.all(isRound ? 8 : 10),
                     decoration: const BoxDecoration(
@@ -82,18 +81,18 @@ class WeatherConditionPicker extends StatelessWidget {
               physics: const FixedExtentScrollPhysics(),
               perspective: 0.002,
               onSelectedItemChanged: (index) =>
-                  controller.centerIndex.value = index,
+                  WeatherConditionController.to.centerIndex.value = index,
               childDelegate: ListWheelChildLoopingListDelegate(
                 children: List.generate(
-                  controller.weatherOptions.length,
+                  WeatherConditionController.to.weatherOptions.length,
                   (index) {
                     final isSelected =
-                        controller.selectedWeather.contains(index);
+                        WeatherConditionController.to.selectedWeather.contains(index);
                     return GestureDetector(
-                      onTap: () => controller.toggleWeather(index),
+                      onTap: () => WeatherConditionController.to.toggleWeather(index),
                       child: Center(
                         child: Text(
-                          controller.weatherOptions[index],
+                          WeatherConditionController.to.weatherOptions[index],
                           style: TextStyle(
                             fontSize: isSelected ? 24 : 20,
                             fontWeight: isSelected

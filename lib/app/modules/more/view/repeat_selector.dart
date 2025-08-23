@@ -60,7 +60,6 @@ void showRepeatOptions(BuildContext context) {
             _option("Custom", () {
               controller.selectedMode.value = 'custom';
               controller.selectedDays.clear();
-              // Delay picker opening until after this sheet is closed
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _showCustomDayPicker(context);
               });
@@ -76,7 +75,6 @@ Widget _option(String label, VoidCallback onTap) {
   final controller = MoreSettingsController.to;
   final isRound = WatchShapeService.isRound;
 
-  // Define preset selections
   final presetDays = {
     "Weekdays": [0, 1, 2, 3, 4],
     "Daily": [0, 1, 2, 3, 4, 5, 6],
@@ -88,7 +86,6 @@ Widget _option(String label, VoidCallback onTap) {
   bool isSelected;
 
   if (label == "Custom") {
-    // Custom = Not Weekdays, Not Daily
     final isWeekdays = DaysListMatcher.matches(currentDays, presetDays["Weekdays"]!);
     final isDaily = DaysListMatcher.matches(currentDays, presetDays["Daily"]!);
     isSelected = !isWeekdays && !isDaily;

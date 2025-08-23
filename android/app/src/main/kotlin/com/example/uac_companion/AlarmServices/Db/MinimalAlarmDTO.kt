@@ -25,7 +25,7 @@ data class MinimalAlarmDTO(
     // Weather Condition
     val isWeatherEnabled: Boolean,
     val weatherConditionType: Int,
-    val weatherTypes: String, // store as comma-separated list
+    val weatherTypes: String,
 
     // Location Condition
     val isLocationEnabled: Boolean,
@@ -41,7 +41,6 @@ data class MinimalAlarmDTO(
                 isEnabled = cursor.getInt(cursor.getColumnIndexOrThrow("is_enabled")) == 1,
                 isOneTime = cursor.getInt(cursor.getColumnIndexOrThrow("is_one_time")),
                 fromWatch = cursor.getInt(cursor.getColumnIndexOrThrow("from_watch")) == 1,
-                // phoneId = cursor.getString(cursor.getColumnIndex("phone_id")),
                 uniqueSyncId = cursor.getString(cursor.getColumnIndexOrThrow("unique_sync_id")),
 
                 // Screen Activity

@@ -1,5 +1,5 @@
 class Alarm {
-  int? id; // local DB primary key
+  int? id;
   final String? uniqueSyncId;
   final String time;
   final List<int> days;

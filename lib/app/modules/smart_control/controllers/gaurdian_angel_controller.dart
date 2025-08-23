@@ -2,9 +2,12 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 class GaurdianAngelController extends GetxController {
+  static GaurdianAngelController get to => Get.find();
+
   var countryCode = "+91".obs;
   var phoneNumber = "".obs;
   var isCall = false.obs;
+
   void setPhoneNumber(String number) {
     phoneNumber.value = number;
   }

@@ -4,12 +4,13 @@ import 'package:uac_companion/app/modules/smart_control/controllers/gaurdian_ang
 import 'package:uac_companion/app/utils/colors.dart' as uac_colors;
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
 
-class GaurdianAngelScreen extends GetView<GaurdianAngelController> {
+class GaurdianAngelScreen extends StatelessWidget {
   const GaurdianAngelScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Get.put(GaurdianAngelController());
+    // Get.put(GaurdianAngelController()); 
+    
     final isRound = WatchShapeService.isRound;
 
     return Scaffold(
@@ -62,7 +63,8 @@ class GaurdianAngelScreen extends GetView<GaurdianAngelController> {
         children: [
           Obx(
             () => Text(
-              controller.countryCode.value,
+              // Use the static accessor here
+              GaurdianAngelController.to.countryCode.value,
               style: TextStyle(
                 fontSize: isRound ? 12 : 14,
                 fontWeight: FontWeight.normal,
@@ -80,7 +82,8 @@ class GaurdianAngelScreen extends GetView<GaurdianAngelController> {
                 hintStyle: TextStyle(color: Colors.grey, fontSize: isRound ? 12 : 14),
               ),
               keyboardType: TextInputType.phone,
-              onChanged: controller.setPhoneNumber,
+              // Use the static accessor here
+              onChanged: GaurdianAngelController.to.setPhoneNumber,
             ),
           ),
         ],
@@ -93,18 +96,18 @@ class GaurdianAngelScreen extends GetView<GaurdianAngelController> {
       () => Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // SMS Button
           _actionButton(
             icon: Icons.message,
-            isSelected: !controller.isCall.value,
-            onTap: () => controller.selectActionType(false),
+            // Use the static accessor here
+            isSelected: !GaurdianAngelController.to.isCall.value,
+            onTap: () => GaurdianAngelController.to.selectActionType(false),
           ),
           SizedBox(width: isRound ? 25 : 28),
-          // Call Button
           _actionButton(
             icon: Icons.phone,
-            isSelected: controller.isCall.value,
-            onTap: () => controller.selectActionType(true),
+            // Use the static accessor here
+            isSelected: GaurdianAngelController.to.isCall.value,
+            onTap: () => GaurdianAngelController.to.selectActionType(true),
           ),
         ],
       ),
@@ -113,7 +116,8 @@ class GaurdianAngelScreen extends GetView<GaurdianAngelController> {
 
   Widget _buildConfirmButton(bool isRound) {
     return GestureDetector(
-      onTap: controller.confirm,
+      // Use the static accessor here
+      onTap: GaurdianAngelController.to.confirm,
       child: Container(
         decoration: const BoxDecoration(
           shape: BoxShape.circle,

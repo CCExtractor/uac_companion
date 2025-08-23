@@ -18,12 +18,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     loadAlarms();
 
+    //! if native receives alarm from phone then reload the UI
     const MethodChannel('uac_alarm_channel').setMethodCallHandler((call) async {
-    if (call.method == 'onAlarmInserted') {
-      debugPrint('Flutter: Received onAlarmInserted from native');
-      await loadAlarms();
-    }
-  });
+      if (call.method == 'alarmsChanged') {
+        debugPrint(
+            'Flutter (Watch): Received alarmsChanged event. Reloading alarms.');
+        await loadAlarms();
+      }
+    });
   }
 
   //* Needed for the WidgetsBindingObserver to listen to app lifecycle changes
@@ -47,71 +49,68 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> toggleAlarm(String uniqueSyncId) async {
-  final updatedAlarms = alarms.map((alarm) {
-    if (alarm.uniqueSyncId == uniqueSyncId) {
-      final updated = Alarm(
-        id: alarm.id,
-        time: alarm.time,
-        days: alarm.days,
-        isEnabled: !alarm.isEnabled,
-        isOneTime: alarm.isOneTime,
-        fromWatch: alarm.fromWatch,
-        uniqueSyncId: alarm.uniqueSyncId,
-        isLocationEnabled: false,
-        location: '',
-        isGuardian: false,
-        guardian: '',
-        guardianTimer: 0,
-        isCall: false,
-      );
-      return updated;
-    }
-    return alarm;
-  }).toList();
+    final updatedAlarms = alarms.map((alarm) {
+      if (alarm.uniqueSyncId == uniqueSyncId) {
+        final updated = Alarm(
+          id: alarm.id,
+          time: alarm.time,
+          days: alarm.days,
+          isEnabled: !alarm.isEnabled,
+          isOneTime: alarm.isOneTime,
+          fromWatch: alarm.fromWatch,
+          uniqueSyncId: alarm.uniqueSyncId,
+          isLocationEnabled: false,
+          location: '',
+          isGuardian: false,
+          guardian: '',
+          guardianTimer: 0,
+          isCall: false,
+        );
+        return updated;
+      }
+      return alarm;
+    }).toList();
 
-  final updatedAlarm = updatedAlarms.firstWhere((a) => a.uniqueSyncId == uniqueSyncId);
-  alarms.assignAll(updatedAlarms);
-  await alarmService.updateAlarm(updatedAlarm);
-  debugPrint('HomeController -> Alarm toggled: $updatedAlarm');
+    final updatedAlarm =
+        updatedAlarms.firstWhere((a) => a.uniqueSyncId == uniqueSyncId);
+    alarms.assignAll(updatedAlarms);
+    await alarmService.updateAlarm(updatedAlarm);
+    debugPrint('HomeController -> Alarm toggled: $updatedAlarm');
 
-  try {
-    if (!updatedAlarm.isEnabled) {
-      await platform.invokeMethod('cancelAlarm', {
-        'id': updatedAlarm.id,
-        'uniqueSyncId': updatedAlarm.uniqueSyncId,
-        // 'phoneId': updatedAlarm.phoneId
-      });
+    try {
+      if (!updatedAlarm.isEnabled) {
+        await platform.invokeMethod('cancelAlarm', {
+          'id': updatedAlarm.id,
+          'uniqueSyncId': updatedAlarm.uniqueSyncId,
+        });
+      }
+      await platform.invokeMethod('scheduleAlarm');
+      final alarmMap = updatedAlarm.toMap();
+      alarmMap['isNewAlarm'] = false;
+
+      await watchChannel.invokeMethod('sendAlarmToPhone', alarmMap);
+      await loadAlarms();
+    } catch (e) {
+      debugPrint('HomeController -> Error toggling alarm: $e');
     }
-    await platform.invokeMethod('scheduleAlarm');
-    await watchChannel.invokeMethod('sendActionToPhone', {
-        'action': "update", 
-        'uniqueSyncId': updatedAlarm.uniqueSyncId,
-        'id': updatedAlarm.id
-    });
-    await loadAlarms();
-  } catch (e) {
-    debugPrint('HomeController -> Error toggling alarm: $e');
   }
-}
 
   Future<void> deleteAlarm(Alarm alarm) async {
-  if (alarm.id == null) return;
-  try {
-    await platform.invokeMethod('cancelAlarm', {
-      'id': alarm.id,
-      'uniqueSyncId': alarm.uniqueSyncId
-    });
-    await alarmService.deleteAlarm(alarm.id!);
-    alarms.removeWhere((a) => a.id == alarm.id);
-    await platform.invokeMethod('scheduleAlarm');
-    await loadAlarms();
-    await watchChannel.invokeMethod('sendActionToPhone', {
-        'action': "delete", 
+    if (alarm.uniqueSyncId == null) return;
+    try {
+      await platform.invokeMethod(
+          'cancelAlarm', {'id': alarm.id, 'uniqueSyncId': alarm.uniqueSyncId});
+      await alarmService.deleteAlarm(alarm.uniqueSyncId!);
+      alarms.removeWhere((a) => a.uniqueSyncId == alarm.uniqueSyncId);
+      await platform.invokeMethod('scheduleAlarm');
+      await loadAlarms();
+      await watchChannel.invokeMethod('sendActionToPhone', {
+        'action': "delete alarm",
         'uniqueSyncId': alarm.uniqueSyncId,
-        'id': alarm.id
+        // 'id': alarm.id
       });
-  } catch (e) {
-    debugPrint('HomeController -> Alarm delete/cancel failed: $e');
+    } catch (e) {
+      debugPrint('HomeController -> Alarm delete/cancel failed: $e');
+    }
   }
-}
 }

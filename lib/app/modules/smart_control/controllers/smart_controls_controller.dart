@@ -79,6 +79,7 @@ class SmartControlsController extends GetxController {
   }
 
   void updateWeatherCondition(bool enabled, int type, List<int> weatherCodes) {
+    isWeatherConditionOn.value = enabled;
     AlarmSetupControllers.to.setWeatherData(enabled, type, weatherCodes,);
   }
 
