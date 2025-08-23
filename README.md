@@ -147,17 +147,17 @@ Following these steps should help resolve common setup-related issues for new co
 
 ## Project Status
 ### Completed
--Full CRUD for alarms on Wear OS.
--MVC and GetX controlled data flow.
--Two-way sync for alarms + smart controls.
--Location & Weather smart control evaluation loop.
--Native snooze scheduling and handling.
--Alarms can be synced/received by the watch even in background or doze mode.
+- Full CRUD for alarms on Wear OS.
+- MVC and GetX controlled data flow.
+- Two-way sync for alarms + smart controls.
+- Location & Weather smart control evaluation loop.
+- Native snooze scheduling and handling.
+- Alarms can be synced/received by the watch even in background or doze mode.
 
 ### Partially done
--The feedback loop for sending smart control results for Activity & Guardian to the watch is still in progress.
--Configurable snooze duration and its syncing.
--Add more features from UAC Mobile app and sync them.
+- The feedback loop for sending smart control results for Activity & Guardian to the watch is still in progress.
+- Configurable snooze duration and its syncing.
+- Add more features from UAC Mobile app and sync them.
 
 
 
