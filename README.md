@@ -49,7 +49,7 @@ During the GSoC'25 period, the following features were implemented by Contributo
 
 ## Core Architecture
 The companion app uses a **hybrid model**:
-- **Flutter (UI & Database Owner)**
+- **Flutter (UI)**
   - UI built in Flutter.
   - State managed via **GetX**.
   - SQLite database is the single source of truth (on both phone and watch).
