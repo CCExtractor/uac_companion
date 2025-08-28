@@ -154,10 +154,6 @@ Following these steps should help resolve common setup-related issues for new co
 - Native snooze scheduling and handling.
 - Alarms can be synced/received by the watch even in background or doze mode.
 
-### Partially done
-- The feedback loop for sending smart control results for Activity & Guardian to the watch is still in progress.
-- Configurable snooze duration and its syncing.
-- Add more features from UAC Mobile app and sync them.
 
 
 
