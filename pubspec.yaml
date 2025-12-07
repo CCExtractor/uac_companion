@@ -16,6 +16,7 @@ dependencies:
   latlong2: ^0.9.1
   flutter_map: ^7.0.2
   fl_location: ^5.0.0
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

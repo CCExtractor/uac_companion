@@ -30,10 +30,13 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
 
-        // Reschedule the alarm 5 minute ahead
+        // Reschedule the alarm based on user preference
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val snoozeMinutes = prefs.getLong("flutter.snooze_duration", 5L) // Default 5 mins if not found
+        Log.d(TAG, "Snooze duration: $snoozeMinutes minutes")
+
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        // val triggerAtMillis = System.currentTimeMillis() + 300_000
-        val triggerAtMillis = System.currentTimeMillis() + 300_000
+        val triggerAtMillis = System.currentTimeMillis() + (snoozeMinutes * 60 * 1000)
 
         val snoozeIntent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
             // putExtra("alarmId", alarmId)
@@ -58,6 +61,6 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, snoozePendingIntent)
         }
 
-        Log.d(TAG, "→ Snoozed alarmId=$uniqueSyncId to $triggerAtMillis")
+        Log.d(TAG, "→ Snoozed alarmId=$uniqueSyncId to $triggerAtMillis (duration: $snoozeMinutes min)")
     }
 }

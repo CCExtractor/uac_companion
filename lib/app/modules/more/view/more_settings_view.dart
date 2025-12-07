@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uac_companion/app/modules/more/view/repeat_selector.dart';
 import 'package:uac_companion/app/utils/watch_shape_service.dart';
+import 'package:flutter/cupertino.dart';
 import '../controller/more_settings_controller.dart';
 import '../../../utils/colors.dart';
 
@@ -50,6 +51,34 @@ class MoreSettingsView extends StatelessWidget {
                 onTap: () => showRepeatOptions(context),
               ),
             ),
+            Container(
+              margin:
+                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                title: Text(
+                  "Snooze",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isRound ? 13 : 17,
+                  ),
+                ),
+                subtitle: Obx(() => Text(
+                      "${MoreSettingsController.to.snoozeDuration.value} minutes",
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontSize: isRound ? 10 : 12,
+                      ),
+                    )),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.green,
+                  size: 16,
+                ),
+                onTap: () => showSnoozePicker(context),
+              ),
+            ),
             const Spacer(),
             Center(
               child: GestureDetector(
@@ -80,6 +109,68 @@ class MoreSettingsView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void showSnoozePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          height: 300,
+          padding: const EdgeInsets.only(top: 6.0),
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          color: AppColors.background,
+          child: Column(
+            children: [
+               Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "Snooze Duration",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: CupertinoTheme(
+                   data: CupertinoThemeData(
+                    brightness: Brightness.dark,
+                    textTheme: CupertinoTextThemeData(
+                      pickerTextStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                  child: CupertinoPicker(
+                    itemExtent: 40,
+                    scrollController: FixedExtentScrollController(
+                      initialItem: MoreSettingsController.to.snoozeDuration.value - 1,
+                    ),
+                    onSelectedItemChanged: (int index) {
+                      MoreSettingsController.to.setSnoozeTime(index + 1);
+                    },
+                    children: List<Widget>.generate(60, (int index) {
+                      return Center(
+                        child: Text('${index + 1} min'),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

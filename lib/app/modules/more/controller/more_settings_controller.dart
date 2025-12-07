@@ -1,10 +1,29 @@
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MoreSettingsController extends GetxController {
   static MoreSettingsController get to => Get.find();
 
   RxList<int> selectedDays = <int>[].obs;
   RxString selectedMode = 'custom'.obs;
+  RxInt snoozeDuration = 5.obs; // Default 5 minutes
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadSnoozeTime();
+  }
+
+  Future<void> _loadSnoozeTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    snoozeDuration.value = prefs.getInt('snooze_duration') ?? 5;
+  }
+
+  Future<void> setSnoozeTime(int minutes) async {
+    snoozeDuration.value = minutes;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('snooze_duration', minutes);
+  }
 
   void init(List<int> days) {
     selectedDays.assignAll(days);
