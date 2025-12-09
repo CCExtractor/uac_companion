@@ -7,13 +7,15 @@ body:
     id: description
     attributes:
       label: Description
-      description: A brief description of the question or issue, also include what you tried and what didn't work
+      description: A brief description of the question or issue. Please include what you tried and what didn't work.
     validations:
       required: true
   - type: textarea
-    id: screenshots
+    id: visual_proof
     attributes:
-      label: Screenshots
-      description: Please add screenshots if applicable
+      label: Screenshots / Screen Recordings
+      description: |
+        Please drag and drop screenshots or screen recordings (videos) here. 
+        Video is highly recommended for UI glitches or animation issues.
     validations:
       required: false

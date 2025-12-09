@@ -7,13 +7,14 @@ body:
     id: description
     attributes:
       label: Description
-      description: Description of the enhancement you propose, also include what you tried and what worked.
+      description: Description of the enhancement you propose. Also include what you tried and what worked.
     validations:
       required: true
   - type: textarea
-    id: screenshots
+    id: visual_proof
     attributes:
-      label: Screenshots
-      description: Screenshots if applicable
+      label: Screenshots / Mockups / Videos
+      description: |
+        Drag and drop any visuals (screenshots, video examples, mockups) that help explain your idea.
     validations:
       required: false
