@@ -78,6 +78,9 @@ object AlarmUtils {
             val locationConditionType = cursor.getInt(cursor.getColumnIndex("location_condition_type"))
             val days = daysRaw.split(",").mapNotNull { it.trim().toIntOrNull() }
 
+            val snoozeDurationIndex = cursor.getColumnIndex("snooze_duration")
+            val snoozeDuration = if (snoozeDurationIndex != -1) cursor.getInt(snoozeDurationIndex) else 5
+
             alarms.add(
                     Alarm(
                             id,
@@ -103,8 +106,9 @@ object AlarmUtils {
 
                             isLocationEnabled,
                             location,
-                            locationConditionType
+                            locationConditionType,
 
+                            snoozeDuration
                     )
             )
         }

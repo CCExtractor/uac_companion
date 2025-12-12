@@ -32,7 +32,10 @@ data class Alarm(
     // Location Condition
     val isLocationEnabled: Boolean = false,
     val location: String = "",
-    val locationConditionType: Int = 0
+    val locationConditionType: Int = 0,
+
+    // Snooze
+    val snoozeDuration: Int = 5
 )
 
 class AlarmDbModel(context: Context) : SQLiteOpenHelper(

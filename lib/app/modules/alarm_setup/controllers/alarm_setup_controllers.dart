@@ -15,6 +15,7 @@ class AlarmSetupControllers extends GetxController {
   final RxString selectedPeriod = 'AM'.obs;
   final RxInt selectedIconIndex = 1.obs;
   final RxList<int> selectedDays = <int>[].obs;
+  final RxInt snoozeDuration = 5.obs;
 
   final RxBool isActivityEnabled = false.obs;
   final RxInt activityInterval = 0.obs;
@@ -135,6 +136,7 @@ class AlarmSetupControllers extends GetxController {
     guardian.value = args['guardian'] ?? '';
     guardianTimer.value = args['guardianTimer'] ?? 10;
     isCall.value = args['isCall'] ?? false;
+    snoozeDuration.value = args['snoozeDuration'] ?? 5;
 
     final hour24 = initialHour ?? DateTime.now().hour;
     final minute = initialMinute ?? DateTime.now().minute;
@@ -187,6 +189,7 @@ class AlarmSetupControllers extends GetxController {
       guardian: guardian.value,
       guardianTimer: guardianTimer.value,
       isCall: isCall.value,
+      snoozeDuration: snoozeDuration.value,
     );
 
     debugPrint('flutter before insert/update: $alarm');

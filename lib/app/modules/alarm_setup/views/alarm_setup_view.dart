@@ -73,11 +73,21 @@ class AlarmSetupView extends StatelessWidget {
                           // final result =await Get.toNamed(AppRoutes.moreSettings);
                           final result = await Get.to(
                             () => const MoreSettingsView(),
-                            arguments: AlarmSetupControllers.to.selectedDays,
+                            arguments: {
+                              'days': AlarmSetupControllers.to.selectedDays,
+                              'snooze':
+                                  AlarmSetupControllers.to.snoozeDuration.value,
+                            },
                           );
-                          if (result is List<int>) {
-                            AlarmSetupControllers.to.selectedDays.value =
-                                result;
+                          if (result is Map) {
+                            if (result['days'] is List<int>) {
+                              AlarmSetupControllers.to.selectedDays.value =
+                                  result['days'];
+                            }
+                            if (result['snooze'] is int) {
+                              AlarmSetupControllers.to.snoozeDuration.value =
+                                  result['snooze'];
+                            }
                           }
                         },
                             AlarmSetupControllers.to.selectedIconIndex.value ==

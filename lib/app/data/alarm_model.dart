@@ -28,6 +28,9 @@ class Alarm {
   final String location;
   final int locationConditionType;
 
+  // Snooze
+  final int snoozeDuration;
+
   Alarm({
     this.id,
     this.uniqueSyncId,
@@ -49,6 +52,7 @@ class Alarm {
     this.isLocationEnabled = false,
     this.location = '',
     this.locationConditionType = 0,
+    this.snoozeDuration = 5,
   });
 
   Map<String, dynamic> toMap() => {
@@ -80,6 +84,9 @@ class Alarm {
         'is_location_enabled': isLocationEnabled ? 1 : 0,
         'location': location,
         'location_condition_type': locationConditionType,
+
+        // Snooze
+        'snooze_duration': snoozeDuration,
       };
 
   @override
@@ -88,7 +95,8 @@ class Alarm {
       'isActivityEnabled: $isActivityEnabled, activityInterval: $activityInterval, activityConditionType: $activityConditionType, '
       'isGuardian: $isGuardian, guardian: $guardian, guardianTimer: $guardianTimer, isCall: $isCall, '
       'isWeatherEnabled: $isWeatherEnabled, weatherConditionType: $weatherConditionType, weatherTypes: $weatherTypes, '
-      'isLocationEnabled: $isLocationEnabled, location: $location, locationConditionType: $locationConditionType)';
+      'isLocationEnabled: $isLocationEnabled, location: $location, locationConditionType: $locationConditionType, '
+      'snoozeDuration: $snoozeDuration)';
 }
 
 Alarm alarmFromMap(Map<String, dynamic> map) {
@@ -139,5 +147,8 @@ Alarm alarmFromMap(Map<String, dynamic> map) {
     isLocationEnabled: (map['is_location_enabled'] ?? 0) == 1,
     location: map['location'] ?? '',
     locationConditionType: map['location_condition_type'] ?? 0,
+
+    // Snooze
+    snoozeDuration: map['snooze_duration'] ?? 5,
   );
 }

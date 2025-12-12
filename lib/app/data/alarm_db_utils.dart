@@ -12,7 +12,12 @@ class DBHelper {
   Future<Database> get db async {
     if (_database != null) return _database!;
     final path = join(await getDatabasesPath(), 'wear_alarms.db');
-    _database = await openDatabase(path, version: 1, onCreate: _createDB);
+    _database = await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _onUpgrade,
+    );
     return _database!;
   }
 
@@ -38,9 +43,19 @@ class DBHelper {
       weather_types TEXT DEFAULT '',
       is_location_enabled INTEGER NOT NULL DEFAULT 0,
       location TEXT DEFAULT '',
-      location_condition_type INTEGER NOT NULL DEFAULT 0
+      location_condition_type INTEGER NOT NULL DEFAULT 0,
+      snooze_duration INTEGER NOT NULL DEFAULT 5
     )
   ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add snooze_duration column for existing databases
+      await db.execute(
+        'ALTER TABLE alarms ADD COLUMN snooze_duration INTEGER NOT NULL DEFAULT 5'
+      );
+    }
   }
 
   Future<int> insert(String table, Map<String, dynamic> data) async {
@@ -91,6 +106,7 @@ class AlarmDBService {
       isLocationEnabled: alarm.isLocationEnabled,
       location: alarm.location,
       locationConditionType: alarm.locationConditionType,
+      snoozeDuration: alarm.snoozeDuration,
     );
   }
 

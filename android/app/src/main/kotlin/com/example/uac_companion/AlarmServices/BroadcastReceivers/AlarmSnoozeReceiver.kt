@@ -31,8 +31,22 @@ class AlarmSnoozeReceiver : BroadcastReceiver() {
         notificationManager.cancel(NOTIFICATION_ID)
 
         // Reschedule the alarm based on user preference
-        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        val snoozeMinutes = prefs.getLong("flutter.snooze_duration", 5L) // Default 5 mins if not found
+        // val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        // val snoozeMinutes = prefs.getLong("flutter.snooze_duration", 5L) // Default 5 mins if not found
+        
+        var snoozeMinutes = 5L
+        try {
+             val allAlarms = AlarmUtils.getAllAlarmsFromDb(context)
+             val alarm = allAlarms.find { it.uniqueSyncId == uniqueSyncId }
+             if (alarm != null) {
+                 snoozeMinutes = alarm.snoozeDuration.toLong()
+             } else {
+                 Log.e(TAG, "Alarm not found for snooze duration, using default 5 min")
+             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching snooze duration: ${e.message}", e)
+        }
+        
         Log.d(TAG, "Snooze duration: $snoozeMinutes minutes")
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

@@ -4,7 +4,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class AlarmDBHelper(context: Context) : SQLiteOpenHelper(context, "wear_alarms.db", null, 1) {
+class AlarmDBHelper(context: Context) : SQLiteOpenHelper(context, "wear_alarms.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -37,14 +37,18 @@ class AlarmDBHelper(context: Context) : SQLiteOpenHelper(context, "wear_alarms.d
                 -- Location Condition
                 is_location_enabled INTEGER NOT NULL DEFAULT 0,
                 location TEXT DEFAULT '',
-                location_condition_type INTEGER NOT NULL DEFAULT 0
+                location_condition_type INTEGER NOT NULL DEFAULT 0,
+
+                -- Snooze
+                snooze_duration INTEGER NOT NULL DEFAULT 5
             )
             """.trimIndent()
         )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS alarms")
-        onCreate(db)
+        if (oldVersion < 2) {
+             db.execSQL("ALTER TABLE alarms ADD COLUMN snooze_duration INTEGER NOT NULL DEFAULT 5")
+        }
     }
 }
